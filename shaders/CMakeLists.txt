@@ -8,7 +8,7 @@ set(shaders_target rtxdi-sample-shaders)
 
 add_custom_target(${shaders_target}
     DEPENDS ShaderMake
-    SOURCES ${shaders} Shaders.cfg)
+    SOURCES ${shaders} Shaders.cfg "GSGIParameters.h")
 
 if(TARGET NRD)
    set(NRD_OPTIONS -I "${CMAKE_CURRENT_SOURCE_DIR}/../NRD/Shaders/Include" -D WITH_NRD -D NRD_USE_OCT_NORMAL_ENCODING=0 -D NRD_USE_MATERIAL_ID=0)

@@ -50,7 +50,8 @@ enum class IndirectLightingMode : uint32_t
 {
     None,
     Brdf,
-    ReStirGI
+    ReStirGI,
+    GSGI
 };
 
 enum class QualityPreset : uint32_t

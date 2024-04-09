@@ -20,6 +20,7 @@
 #include <rtxdi/ReSTIRDIParameters.h>
 #include <rtxdi/ReSTIRGIParameters.h>
 #include "../shaders/BRDFPTParameters.h"
+#include "../shaders/GSGIParameters.h"
 
 namespace donut::engine
 {
@@ -55,6 +56,7 @@ typedef int ibool;
 BRDFPathTracing_MaterialOverrideParameters getDefaultBRDFPathTracingMaterialOverrideParams();
 BRDFPathTracing_SecondarySurfaceReSTIRDIParameters getDefaultBRDFPathTracingSecondarySurfaceReSTIRDIParams();
 BRDFPathTracing_Parameters getDefaultBRDFPathTracingParams();
+GSGI_Parameters getDefaultGSGIParams();
 
 class LightingPasses
 {
@@ -124,6 +126,7 @@ public:
         float confidenceHistoryLength = 0.75f;
 
         BRDFPathTracing_Parameters brdfptParams = getDefaultBRDFPathTracingParams();
+        GSGI_Parameters gsgiParams = getDefaultGSGIParams();
         
 #if WITH_NRD
         const nrd::HitDistanceParameters* reblurDiffHitDistanceParams = nullptr;

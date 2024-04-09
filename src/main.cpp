@@ -1200,6 +1200,7 @@ public:
         bool enableDirectReStirPass = m_ui.directLightingMode == DirectLightingMode::ReStir;
         bool enableBrdfAndIndirectPass = m_ui.directLightingMode == DirectLightingMode::Brdf || m_ui.indirectLightingMode != IndirectLightingMode::None;
         bool enableIndirect = m_ui.indirectLightingMode != IndirectLightingMode::None;
+        bool enableGSGIPass = m_ui.indirectLightingMode == IndirectLightingMode::GSGI;
 
         // When indirect lighting is enabled, we don't want ReSTIR to be the NRD front-end,
         // it should just write out the raw color data.
@@ -1242,7 +1243,12 @@ public:
             }
         }
 
-        if (enableBrdfAndIndirectPass)
+        if (enableGSGIPass)
+        {
+            // Do GSGI stuff here
+        }
+
+        else if (enableBrdfAndIndirectPass)
         {
             ReSTIRDI_ShadingParameters restirDIShadingParams = m_isContext->getReSTIRDIContext().getShadingParameters();
             restirDIShadingParams.enableDenoiserInputPacking = true;

@@ -75,6 +75,14 @@ BRDFPathTracing_Parameters getDefaultBRDFPathTracingParams()
     return params;
 }
 
+GSGI_Parameters getDefaultGSGIParams()
+{
+    GSGI_Parameters params;
+    params.samplesPerFrame = 1024;
+    params.sampleLifespan = 8;
+    return params;
+}
+
 LightingPasses::LightingPasses(
     nvrhi::IDevice* device, 
     std::shared_ptr<ShaderFactory> shaderFactory,

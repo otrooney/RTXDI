@@ -673,6 +673,7 @@ void UserInterface::SamplingSettings()
             "None\0"
             "BRDF\0"
             "ReSTIR GI\0"
+            "GSGI\0"
         );
         switch (m_ui.indirectLightingMode)
         {
@@ -686,14 +687,19 @@ void UserInterface::SamplingSettings()
                 "Trace diffuse and specular BRDF rays and resample results with ReSTIR GI. "
                 "Shade the surfaces found with BRDF rays using direct light sampling.");
             break;
+        case IndirectLightingMode::GSGI:
+            ShowHelpMarker(
+                "Temp. "
+                "Shade the surfaces found with BRDF rays using direct light sampling.");
+            break;
         default:;
         }
 
-        bool isUsingIndirect = m_ui.indirectLightingMode != IndirectLightingMode::None;
+        bool isUsingBrdfIndirect = m_ui.indirectLightingMode == IndirectLightingMode::Brdf || m_ui.indirectLightingMode == IndirectLightingMode::ReStirGI;
 
         m_ui.resetAccumulation |= ImGui::SliderFloat("Min Secondary Roughness", &m_ui.lightingSettings.brdfptParams.materialOverrideParams.minSecondaryRoughness, 0.f, 1.f);
 
-        if (isUsingIndirect && ImGui::TreeNode("Secondary Surface Light Sampling"))
+        if (isUsingBrdfIndirect && ImGui::TreeNode("Secondary Surface Light Sampling"))
         {
             // TODO: Determine whether to have choice of sampling mode here and in ReSTIR DI.
             // Should probably have a single numLocalLightSamples in the struct and have the UI keep track of the 3 different values for each mode
@@ -704,7 +710,7 @@ void UserInterface::SamplingSettings()
             ImGui::TreePop();
         }
 
-        if (isUsingIndirect && m_ui.directLightingMode == DirectLightingMode::ReStir && ImGui::TreeNode("Reuse Primary Samples"))
+        if (isUsingBrdfIndirect && m_ui.directLightingMode == DirectLightingMode::ReStir && ImGui::TreeNode("Reuse Primary Samples"))
         {
             m_ui.resetAccumulation |= ImGui::Checkbox("Reuse RTXDI samples for secondary surface", (bool*)&m_ui.lightingSettings.brdfptParams.enableSecondaryResampling);
             ShowHelpMarker(
@@ -823,6 +829,12 @@ void UserInterface::SamplingSettings()
 
             m_ui.resetAccumulation |= ImGui::Checkbox("Final visibility", (bool*)&m_ui.restirGI.finalShadingParams.enableFinalVisibility);
             m_ui.resetAccumulation |= ImGui::Checkbox("Final MIS", (bool*)&m_ui.restirGI.finalShadingParams.enableFinalMIS);
+        }
+
+        if (m_ui.indirectLightingMode == IndirectLightingMode::GSGI)
+        {
+            m_ui.resetAccumulation |= ImGui::SliderInt("Samples per frame", (int*)&m_ui.lightingSettings.gsgiParams.samplesPerFrame, 1, 4096);
+            m_ui.resetAccumulation |= ImGui::SliderInt("Samples lifespan (frames)", (int*)&m_ui.lightingSettings.gsgiParams.sampleLifespan, 1, 30);
         }
 
         ImGui::TreePop();
