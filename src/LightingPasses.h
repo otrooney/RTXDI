@@ -83,6 +83,7 @@ private:
     RayTracingPass m_GISpatialResamplingPass;
     RayTracingPass m_GIFusedResamplingPass;
     RayTracingPass m_GIFinalShadingPass;
+    RayTracingPass m_GSGIDummyPass;
     nvrhi::BindingLayoutHandle m_BindingLayout;
     nvrhi::BindingLayoutHandle m_BindlessLayout;
     nvrhi::BindingSetHandle m_BindingSet;
@@ -158,6 +159,12 @@ public:
         const RenderSettings& localSettings,
         bool enableAccumulation);
 
+    void GenerateGSGILights(
+        nvrhi::ICommandList* commandList,
+        rtxdi::ReSTIRDIContext& context,
+        const donut::engine::IView& view,
+        const RenderSettings& localSettings);
+
     void RenderDirectLighting(
         nvrhi::ICommandList* commandList,
         rtxdi::ReSTIRDIContext& context,
@@ -198,4 +205,5 @@ private:
     void createReGIRPipeline(const rtxdi::ReGIRStaticParameters& regirStaticParams, const std::vector<donut::engine::ShaderMacro>& regirMacros);
     void createReSTIRDIPipelines(const std::vector<donut::engine::ShaderMacro>& regirMacros, bool useRayQuery);
     void createReSTIRGIPipelines(bool useRayQuery);
+    void createGSGIPipelines(bool useRayQuery);
 };

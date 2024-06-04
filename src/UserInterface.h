@@ -120,7 +120,7 @@ struct UIData
     ibool enableToneMapping = true;
     ibool enablePixelJitter = true;
     ibool rasterizeGBuffer = true;
-    ibool useRayQuery = true;
+    ibool useRayQuery = false;
     ibool enableBloom = true;
     float exposureBias = -1.0f;
     float verticalFov = 60.f;
