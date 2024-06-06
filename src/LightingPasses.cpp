@@ -318,7 +318,8 @@ void LightingPasses::createReGIRPipeline(const rtxdi::ReGIRStaticParameters& reg
 
 void LightingPasses::createGSGIPipelines(bool useRayQuery)
 {
-    m_GSGIDummyPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGIDummy.hlsl", {}, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
+    m_GSGISampleGeometryPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGISampleGeometry.hlsl", {}, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
+    m_GSGICreateLightsPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGICreateLights.hlsl", {}, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
 }
 
 void LightingPasses::createReSTIRDIPipelines(const std::vector<donut::engine::ShaderMacro>& regirMacros, bool useRayQuery)
@@ -546,11 +547,13 @@ void LightingPasses::GenerateGSGILights(
     uint32_t lightBufferOffset = (context.getFrameIndex() % localSettings.gsgiParams.sampleLifespan) * localSettings.gsgiParams.samplesPerFrame;
 
     dm::int2 dispatchSize = {
-        0,
-        static_cast<int>(localSettings.gsgiParams.samplesPerFrame)
+        static_cast<int>(localSettings.gsgiParams.samplesPerFrame),
+        1
     };
 
-    ExecuteRayTracingPass(commandList, m_GSGIDummyPass, localSettings.enableRayCounts, "GSGIDummy", dispatchSize, ProfilerSection::GSGI);
+    ExecuteRayTracingPass(commandList, m_GSGISampleGeometryPass, localSettings.enableRayCounts, "GSGISampleGeometry", dispatchSize, ProfilerSection::GSGI);
+
+    ExecuteRayTracingPass(commandList, m_GSGICreateLightsPass, localSettings.enableRayCounts, "GSGICreateLights", dispatchSize, ProfilerSection::GSGI);
 }
 
 void LightingPasses::RenderDirectLighting(

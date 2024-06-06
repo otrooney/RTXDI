@@ -32,4 +32,9 @@ void Miss(inout RayPayload payload : SV_RayPayload)
 void AnyHit(inout RayPayload payload : SV_RayPayload, in Attributes attrib : SV_IntersectionAttributes)
 {
 }
+
+[shader("closesthit")]
+void ClosestHit(inout RayPayload payload : SV_RayPayload, in Attributes attrib : SV_IntersectionAttributes)
+{
+}
 #endif

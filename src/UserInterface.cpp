@@ -833,8 +833,8 @@ void UserInterface::SamplingSettings()
 
         if (m_ui.indirectLightingMode == IndirectLightingMode::GSGI)
         {
-            m_ui.resetAccumulation |= ImGui::SliderInt("Samples per frame", (int*)&m_ui.lightingSettings.gsgiParams.samplesPerFrame, 1, 4096);
-            m_ui.resetAccumulation |= ImGui::SliderInt("Sample lifespan (frames)", (int*)&m_ui.lightingSettings.gsgiParams.sampleLifespan, 1, 30);
+            m_ui.resetAccumulation |= ImGui::SliderInt("Samples per frame", (int*)&m_ui.lightingSettings.gsgiParams.samplesPerFrame, 1, 16384);
+            m_ui.resetAccumulation |= ImGui::SliderInt("Sample lifespan (frames)", (int*)&m_ui.lightingSettings.gsgiParams.sampleLifespan, 1, 60);
         }
 
         ImGui::TreePop();

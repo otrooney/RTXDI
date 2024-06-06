@@ -35,6 +35,7 @@ static const char* g_SectionNames[ProfilerSection::Count] = {
     "GI - Spatial Resampling",
     "GI - Fused Resampling",
     "GI - Final Shading",
+    "GSGI",
     "Gradients",
     "Denoising",
     "Glass",
