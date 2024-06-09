@@ -27,7 +27,9 @@ RtxdiResources::RtxdiResources(
     uint32_t maxPrimitiveLights,
     uint32_t maxGeometryInstances,
     uint32_t environmentMapWidth,
-    uint32_t environmentMapHeight)
+    uint32_t environmentMapHeight,
+    uint32_t GSGIsamplesPerFrame,
+    uint32_t GSGIsampleLifespan)
     : m_MaxEmissiveMeshes(maxEmissiveMeshes)
     , m_MaxEmissiveTriangles(maxEmissiveTriangles)
     , m_MaxPrimitiveLights(maxPrimitiveLights)
@@ -130,6 +132,16 @@ RtxdiResources::RtxdiResources(
     secondaryGBufferDesc.debugName = "SecondaryGBuffer";
     secondaryGBufferDesc.canHaveUAVs = true;
     SecondaryGBuffer = device->createBuffer(secondaryGBufferDesc);
+
+
+    nvrhi::BufferDesc GSGIGBufferDesc;
+    GSGIGBufferDesc.byteSize = sizeof(GSGIGBufferData) * GSGIsamplesPerFrame;
+    GSGIGBufferDesc.structStride = sizeof(GSGIGBufferData);
+    GSGIGBufferDesc.initialState = nvrhi::ResourceStates::UnorderedAccess;
+    GSGIGBufferDesc.keepInitialState = true;
+    GSGIGBufferDesc.debugName = "GSGIGBuffer";
+    GSGIGBufferDesc.canHaveUAVs = true;
+    GSGIGBuffer = device->createBuffer(GSGIGBufferDesc);
 
 
     nvrhi::TextureDesc environmentPdfDesc;

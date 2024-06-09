@@ -19,6 +19,7 @@
 #include <rtxdi/ReSTIRGIParameters.h>
 
 #include "BRDFPTParameters.h"
+#include "GSGIParameters.h"
 
 #define TASK_PRIMITIVE_LIGHT_BIT 0x80000000u
 
@@ -260,6 +261,12 @@ struct SecondaryGBufferData
     
     float3 emission;
     float pdf;
+};
+
+struct GSGIGBufferData
+{
+    float3 worldPos;
+    uint diffuseAlbedo;         // R11G11B10_UFLOAT
 };
 
 static const uint kSecondaryGBuffer_IsSpecularRay = 1;

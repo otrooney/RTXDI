@@ -142,6 +142,7 @@ LightingPasses::LightingPasses(
         nvrhi::BindingLayoutItem::TypedBuffer_UAV(11),
         nvrhi::BindingLayoutItem::TypedBuffer_UAV(12),
         nvrhi::BindingLayoutItem::StructuredBuffer_UAV(13),
+        nvrhi::BindingLayoutItem::StructuredBuffer_UAV(14),
 
         nvrhi::BindingLayoutItem::VolatileConstantBuffer(0),
         nvrhi::BindingLayoutItem::PushConstants(1, sizeof(PerPassConstants)),
@@ -208,6 +209,7 @@ void LightingPasses::CreateBindingSet(
             nvrhi::BindingSetItem::TypedBuffer_UAV(11, resources.RisLightDataBuffer),
             nvrhi::BindingSetItem::TypedBuffer_UAV(12, m_Profiler->GetRayCountBuffer()),
             nvrhi::BindingSetItem::StructuredBuffer_UAV(13, resources.SecondaryGBuffer),
+            nvrhi::BindingSetItem::StructuredBuffer_UAV(14, resources.GSGIGBuffer),
 
             nvrhi::BindingSetItem::ConstantBuffer(0, m_ConstantBuffer),
             nvrhi::BindingSetItem::PushConstants(1, sizeof(PerPassConstants)),
@@ -233,6 +235,7 @@ void LightingPasses::CreateBindingSet(
 
     m_LightReservoirBuffer = resources.LightReservoirBuffer;
     m_SecondarySurfaceBuffer = resources.SecondaryGBuffer;
+    m_GSGIGBuffer = resources.GSGIGBuffer;
     m_GIReservoirBuffer = resources.GIReservoirBuffer;
 }
 
@@ -552,6 +555,8 @@ void LightingPasses::GenerateGSGILights(
     };
 
     ExecuteRayTracingPass(commandList, m_GSGISampleGeometryPass, localSettings.enableRayCounts, "GSGISampleGeometry", dispatchSize, ProfilerSection::GSGI);
+
+    nvrhi::utils::BufferUavBarrier(commandList, m_SecondarySurfaceBuffer);
 
     ExecuteRayTracingPass(commandList, m_GSGICreateLightsPass, localSettings.enableRayCounts, "GSGICreateLights", dispatchSize, ProfilerSection::GSGI);
 }

@@ -39,6 +39,7 @@ public:
     nvrhi::BufferHandle NeighborOffsetsBuffer;
     nvrhi::BufferHandle LightReservoirBuffer;
     nvrhi::BufferHandle SecondaryGBuffer;
+    nvrhi::BufferHandle GSGIGBuffer;
     nvrhi::TextureHandle EnvironmentPdfTexture;
     nvrhi::TextureHandle LocalLightPdfTexture;
     nvrhi::BufferHandle GIReservoirBuffer;
@@ -52,7 +53,9 @@ public:
         uint32_t maxPrimitiveLights,
         uint32_t maxGeometryInstances,
         uint32_t environmentMapWidth,
-        uint32_t environmentMapHeight);
+        uint32_t environmentMapHeight,
+        uint32_t GSGIsamplesPerFrame,
+        uint32_t GSGIsampleLifespan);
 
     void InitializeNeighborOffsets(nvrhi::ICommandList* commandList, uint32_t neighborOffsetCount);
 

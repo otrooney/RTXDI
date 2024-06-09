@@ -92,6 +92,7 @@ private:
     nvrhi::BufferHandle m_ConstantBuffer;
     nvrhi::BufferHandle m_LightReservoirBuffer;
     nvrhi::BufferHandle m_SecondarySurfaceBuffer;
+    nvrhi::BufferHandle m_GSGIGBuffer;
     nvrhi::BufferHandle m_GIReservoirBuffer;
 
     dm::uint2 m_EnvironmentPdfTextureSize;

@@ -665,6 +665,8 @@ public:
             uint32_t triangleAllocationQuantum = 1024;
             uint32_t primitiveAllocationQuantum = 128;
 
+            GSGI_Parameters gsgiSettings = m_ui.lightingSettings.gsgiParams;
+
             m_RtxdiResources = std::make_unique<RtxdiResources>(
                 GetDevice(), 
                 m_isContext->getReSTIRDIContext(),
@@ -674,7 +676,9 @@ public:
                 (numPrimitiveLights + primitiveAllocationQuantum - 1) & ~(primitiveAllocationQuantum - 1),
                 numGeometryInstances,
                 environmentMapSize.x,
-                environmentMapSize.y);
+                environmentMapSize.y,
+                gsgiSettings.samplesPerFrame,
+                gsgiSettings.sampleLifespan);
 
             m_PrepareLightsPass->CreateBindingSet(*m_RtxdiResources);
             
