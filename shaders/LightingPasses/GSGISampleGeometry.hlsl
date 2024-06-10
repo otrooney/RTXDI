@@ -50,7 +50,8 @@ uint2 globalIndexToDebugVisPointer(uint2 GlobalIndex)
 void writeToGBuffer(
     RayDesc ray,
     RayPayload payload,
-    uint2 GlobalIndex
+    uint2 GlobalIndex,
+    float rDensity
 )
 {
     GSGIGBufferData gsgiGBufferData = (GSGIGBufferData) 0;
@@ -64,6 +65,10 @@ void writeToGBuffer(
     
         gsgiGBufferData.worldPos = ray.Origin + ray.Direction * payload.committedRayT;
         gsgiGBufferData.diffuseAlbedo = Pack_R11G11B10_UFLOAT(ms.diffuseAlbedo);
+        gsgiGBufferData.normal = ms.shadingNormal;
+        gsgiGBufferData.geoNormal = gs.geometryNormal;
+        gsgiGBufferData.distance = payload.committedRayT;
+        gsgiGBufferData.rSampleDensity = rDensity;
     }
     else
     {
@@ -75,6 +80,7 @@ void writeToGBuffer(
     uint gbufferIndex = globalIndexToGBufferPointer(GlobalIndex);
     u_GSGIGBuffer[gbufferIndex] = gsgiGBufferData;
     
+    // Write albedo to debug visualisation buffer (temporary)
     uint2 debugVisIndex = globalIndexToDebugVisPointer(GlobalIndex);
     t_GBufferDiffuseAlbedo[debugVisIndex] = gsgiGBufferData.diffuseAlbedo;
 
@@ -120,7 +126,9 @@ void RayGen()
     TraceRay(SceneBVH, rayFlags, instanceMask, 0, 0, 0, ray, payload);
     REPORT_RAY(payload.instanceID != ~0u);
     
-    writeToGBuffer(ray, payload, GlobalIndex);
+    float rDensity = (4 * c_pi) / (g_Const.gsgi.samplesPerFrame * g_Const.gsgi.sampleLifespan);
+    
+    writeToGBuffer(ray, payload, GlobalIndex, rDensity);
     
 }
 #endif
@@ -151,8 +159,10 @@ void AnyHit(inout RayPayload payload : SV_RayPayload, in Attributes attrib : SV_
     float3 flatNormal = gs.flatNormal;
     float3 rayDirection = WorldRayDirection();
     
+    // Double check the maths here
     float angleCos = dot(rayDirection, flatNormal);
-    float weight = rsqrt(1 - angleCos * angleCos);
+    //float weight = rsqrt(1 - angleCos * angleCos);
+    float weight = 1 / abs(angleCos);
     
     // Use reservoir sampling to determine whether to use this hit
     payload.sumOfWeights += weight;

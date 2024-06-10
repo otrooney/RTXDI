@@ -243,6 +243,8 @@ struct ResamplingConstants
     
     uint2 environmentPdfTextureSize;
     uint2 localLightPdfTextureSize;
+
+    GSGI_Parameters gsgi;
 };
 
 struct PerPassConstants
@@ -265,8 +267,14 @@ struct SecondaryGBufferData
 
 struct GSGIGBufferData
 {
+    float distance;
     float3 worldPos;
+
     uint diffuseAlbedo;         // R11G11B10_UFLOAT
+    float3 normal;
+    float3 geoNormal;
+
+    float rSampleDensity;
 };
 
 static const uint kSecondaryGBuffer_IsSpecularRay = 1;

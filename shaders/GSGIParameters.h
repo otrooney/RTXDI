@@ -8,6 +8,7 @@ struct GSGI_Parameters
 {
     uint32_t samplesPerFrame;
     uint32_t sampleLifespan;
+    float scalingFactor;
 };
 
 #endif // RTXDI_BRDFPT_PARAMETERS_H

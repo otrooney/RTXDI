@@ -80,6 +80,7 @@ GSGI_Parameters getDefaultGSGIParams()
     GSGI_Parameters params;
     params.samplesPerFrame = 1024;
     params.sampleLifespan = 8;
+    params.scalingFactor = 1.0f;
     return params;
 }
 
@@ -483,6 +484,8 @@ void LightingPasses::FillResamplingConstants(
         constants.environmentPdfTextureSize = m_EnvironmentPdfTextureSize;
     }
 
+    constants.gsgi = lightingSettings.gsgiParams;
+
     m_CurrentFrameOutputReservoir = isContext.getReSTIRDIContext().getBufferIndices().shadingInputBufferIndex;
 }
 
@@ -558,7 +561,7 @@ void LightingPasses::GenerateGSGILights(
 
     ExecuteRayTracingPass(commandList, m_GSGISampleGeometryPass, localSettings.enableRayCounts, "GSGISampleGeometry", dispatchSize, ProfilerSection::GSGI);
 
-    nvrhi::utils::BufferUavBarrier(commandList, m_SecondarySurfaceBuffer);
+    // nvrhi::utils::BufferUavBarrier(commandList, m_SecondarySurfaceBuffer);
 
     ExecuteRayTracingPass(commandList, m_GSGICreateLightsPass, localSettings.enableRayCounts, "GSGICreateLights", dispatchSize, ProfilerSection::GSGI);
 }
