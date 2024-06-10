@@ -103,7 +103,8 @@ enum DebugRenderOutput
     PrevRestirLuminance,
     DiffuseConfidence,
     SpecularConfidence,
-    MotionVectors
+    MotionVectors,
+    GSGIGBufferAlbedo
 };
 
 struct UIData

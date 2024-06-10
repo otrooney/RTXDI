@@ -1488,6 +1488,10 @@ public:
                 break;
             case MotionVectors:
                 m_CommonPasses->BlitTexture(m_CommandList, framebuffer, m_RenderTargets->MotionVectors, &m_BindingCache);
+                break;
+            case GSGIGBufferAlbedo:
+                m_DebugVizPasses->RenderUnpackedGSGIDiffuseAlbeo(m_CommandList, m_UpscaledView);
+                m_CommonPasses->BlitTexture(m_CommandList, framebuffer, m_RenderTargets->DebugColor, &m_BindingCache);
         }
         
         m_Profiler->EndFrame(m_CommandList);

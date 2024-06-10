@@ -108,6 +108,10 @@ RenderTargets::RenderTargets(nvrhi::IDevice* device, int2 size)
     desc.debugName = "ReferenceColor";
     ReferenceColor = device->createTexture(desc);
 
+    desc.format = nvrhi::Format::R32_UINT;
+    desc.debugName = "GSGIGBufferAlbedo";
+    GSGIGBufferAlbedo = device->createTexture(desc);
+
     GBufferFramebuffer = std::make_shared<engine::FramebufferFactory>(device);
     GBufferFramebuffer->DepthTarget = DeviceDepth;
     GBufferFramebuffer->RenderTargets = {

@@ -17,6 +17,9 @@ SamplerState s_MaterialSampler : register(s0);
 RWBuffer<uint> u_RayCountBuffer : register(u12);
 RWStructuredBuffer<GSGIGBufferData> u_GSGIGBuffer : register(u14);
 
+// For debug vis
+RWTexture2D<uint> t_GBufferDiffuseAlbedo : register(u15);
+
 struct RayPayload
 {
     float committedRayT;
@@ -33,6 +36,15 @@ uint globalIndexToGBufferPointer(uint2 GlobalIndex)
     // Dispatch size should be 1 in y dimension
     uint gbufferIndex = GlobalIndex.x;
     return gbufferIndex;
+}
+
+uint2 globalIndexToDebugVisPointer(uint2 GlobalIndex)
+{
+    // Represent as 64px wide 2D for visibility
+    uint2 debugBufferIndex;
+    debugBufferIndex.x = GlobalIndex.x % 64;
+    debugBufferIndex.y = GlobalIndex.x / 64;
+    return debugBufferIndex;
 }
 
 void writeToGBuffer(
@@ -62,6 +74,10 @@ void writeToGBuffer(
     // Write to GSGI G buffer
     uint gbufferIndex = globalIndexToGBufferPointer(GlobalIndex);
     u_GSGIGBuffer[gbufferIndex] = gsgiGBufferData;
+    
+    uint2 debugVisIndex = globalIndexToDebugVisPointer(GlobalIndex);
+    t_GBufferDiffuseAlbedo[debugVisIndex] = gsgiGBufferData.diffuseAlbedo;
+
 }
 
 #if USE_RAY_QUERY
