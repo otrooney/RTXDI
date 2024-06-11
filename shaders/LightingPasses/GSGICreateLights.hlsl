@@ -85,7 +85,7 @@ void RayGen()
     lightSample.radiance *= visibility.rgb;
     
     // Account for distance, sample density and scaling factor
-    lightSample.radiance *= pow(gsgiGBufferData.distance, 2) * gsgiGBufferData.rSampleDensity * g_Const.gsgi.scalingFactor;
+    lightSample.radiance *= pow(gsgiGBufferData.distance, 2) * gsgiGBufferData.rSampleDensity * gsgiGBufferData.sumOfAdjWeights * g_Const.gsgi.scalingFactor;
     
     // Represent as a point light with 180 degree cone
     LightShaping lightShaping;

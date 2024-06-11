@@ -28,6 +28,7 @@ struct RayPayload
     uint primitiveIndex;
     float2 barycentrics;
     float sumOfWeights;
+    float sumOfAdjWeights;
     RandomSamplerState rngState;
 };
 
@@ -69,6 +70,7 @@ void writeToGBuffer(
         gsgiGBufferData.geoNormal = gs.geometryNormal;
         gsgiGBufferData.distance = payload.committedRayT;
         gsgiGBufferData.rSampleDensity = rDensity;
+        gsgiGBufferData.sumOfAdjWeights = payload.sumOfAdjWeights;
     }
     else
     {
@@ -121,6 +123,7 @@ void RayGen()
     payload.primitiveIndex = 0;
     payload.barycentrics = 0;
     payload.sumOfWeights = 0;
+    payload.sumOfAdjWeights = 0;
     payload.rngState = rng;
 
     TraceRay(SceneBVH, rayFlags, instanceMask, 0, 0, 0, ray, payload);
@@ -178,6 +181,9 @@ void AnyHit(inout RayPayload payload : SV_RayPayload, in Attributes attrib : SV_
         payload.primitiveIndex = primitiveIndex;
         payload.barycentrics = rayBarycentrics;
     }
+    
+    // Sum of weights with d-squared term required for scaling later
+    payload.sumOfAdjWeights += weight * pow(RayTCurrent(), 2);
 }
 
 [shader("closesthit")]
