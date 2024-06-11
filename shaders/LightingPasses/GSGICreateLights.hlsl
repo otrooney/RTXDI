@@ -88,19 +88,26 @@ void RayGen()
     lightSample.radiance *= pow(gsgiGBufferData.distance, 2) * gsgiGBufferData.rSampleDensity * gsgiGBufferData.sumOfAdjWeights * g_Const.gsgi.scalingFactor;
     
     // Represent as a point light with 180 degree cone
-    LightShaping lightShaping;
-    lightShaping.cosConeAngle = -1.0;
-    lightShaping.primaryAxis = gsgiGBufferData.normal;
-    lightShaping.cosConeSoftness = 1.0;
-    lightShaping.isSpot = true;
-    lightShaping.iesProfileIndex = -1;
+    //LightShaping lightShaping;
+    //lightShaping.cosConeAngle = -1.0;
+    //lightShaping.primaryAxis = gsgiGBufferData.normal;
+    //lightShaping.cosConeSoftness = 1.0;
+    //lightShaping.isSpot = true;
+    //lightShaping.iesProfileIndex = -1;
     
-    PointLight pointLight;
-    pointLight.position = gsgiGBufferData.worldPos;
-    pointLight.flux = lightSample.radiance;
-    pointLight.shaping = lightShaping;
+    //PointLight pointLight;
+    //pointLight.position = gsgiGBufferData.worldPos;
+    //pointLight.flux = lightSample.radiance;
+    //pointLight.shaping = lightShaping;
 
-    // Write to light buffer
+    // Represent as a simple point light
+    // Write to virtual light buffer
+    PolymorphicLightInfo lightInfo = (PolymorphicLightInfo) 0;
+    lightInfo.center = gsgiGBufferData.worldPos;
+    packLightColor(lightSample.radiance, lightInfo);
+    lightInfo.colorTypeAndFlags |= uint(PolymorphicLightType::kPoint) << kPolymorphicLightTypeShift;
     
+    uint gbufferIndex = globalIndexToGBufferPointer(GlobalIndex);
+    u_VirtualLightDataBuffer[gbufferIndex] = lightInfo;
     
 }

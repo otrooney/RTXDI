@@ -51,6 +51,7 @@ PrepareLightsPass::PrepareLightsPass(
         nvrhi::BindingLayoutItem::StructuredBuffer_SRV(2),
         nvrhi::BindingLayoutItem::StructuredBuffer_SRV(3),
         nvrhi::BindingLayoutItem::StructuredBuffer_SRV(4),
+        nvrhi::BindingLayoutItem::StructuredBuffer_SRV(5),
         nvrhi::BindingLayoutItem::Sampler(0)
     };
 
@@ -82,12 +83,14 @@ void PrepareLightsPass::CreateBindingSet(RtxdiResources& resources)
         nvrhi::BindingSetItem::StructuredBuffer_SRV(2, m_Scene->GetInstanceBuffer()),
         nvrhi::BindingSetItem::StructuredBuffer_SRV(3, m_Scene->GetGeometryBuffer()),
         nvrhi::BindingSetItem::StructuredBuffer_SRV(4, m_Scene->GetMaterialBuffer()),
+        nvrhi::BindingSetItem::StructuredBuffer_SRV(5, resources.VirtualLightBuffer),
         nvrhi::BindingSetItem::Sampler(0, m_CommonPasses->m_AnisotropicWrapSampler)
     };
 
     m_BindingSet = m_Device->createBindingSet(bindingSetDesc, m_BindingLayout);
     m_TaskBuffer = resources.TaskBuffer;
     m_PrimitiveLightBuffer = resources.PrimitiveLightBuffer;
+    m_VirtualLightBuffer = resources.VirtualLightBuffer;
     m_LightIndexMappingBuffer = resources.LightIndexMappingBuffer;
     m_GeometryInstanceToLightBuffer = resources.GeometryInstanceToLightBuffer;
     m_LocalLightPdfTexture = resources.LocalLightPdfTexture;

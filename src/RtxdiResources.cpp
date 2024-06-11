@@ -54,6 +54,16 @@ RtxdiResources::RtxdiResources(
     PrimitiveLightBuffer = device->createBuffer(primitiveLightBufferDesc);
 
 
+    nvrhi::BufferDesc virtualLightBufferDesc;
+    virtualLightBufferDesc.byteSize = sizeof(PolymorphicLightInfo) * GSGIsamplesPerFrame;
+    virtualLightBufferDesc.structStride = sizeof(PolymorphicLightInfo);
+    virtualLightBufferDesc.initialState = nvrhi::ResourceStates::ShaderResource;
+    virtualLightBufferDesc.keepInitialState = true;
+    virtualLightBufferDesc.debugName = "VirtualLightBuffer";
+    virtualLightBufferDesc.canHaveUAVs = true;
+    VirtualLightBuffer = device->createBuffer(virtualLightBufferDesc);
+
+
     nvrhi::BufferDesc risBufferDesc;
     risBufferDesc.byteSize = sizeof(uint32_t) * 2 * std::max(risBufferSegmentAllocator.getTotalSizeInElements(), 1u); // RG32_UINT per element
     risBufferDesc.format = nvrhi::Format::RG32_UINT;
@@ -70,8 +80,8 @@ RtxdiResources::RtxdiResources(
     risBufferDesc.debugName = "RisLightDataBuffer";
     RisLightDataBuffer = device->createBuffer(risBufferDesc);
 
-
-    uint32_t maxLocalLights = maxEmissiveTriangles + maxPrimitiveLights;
+    uint32_t maxVirtualLights = GSGIsamplesPerFrame * GSGIsampleLifespan;
+    uint32_t maxLocalLights = maxEmissiveTriangles + maxPrimitiveLights + maxVirtualLights;
     uint32_t lightBufferElements = maxLocalLights * 2;
 
     nvrhi::BufferDesc lightBufferDesc;

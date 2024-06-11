@@ -40,6 +40,7 @@ private:
 
     nvrhi::BufferHandle m_TaskBuffer;
     nvrhi::BufferHandle m_PrimitiveLightBuffer;
+    nvrhi::BufferHandle m_VirtualLightBuffer;
     nvrhi::BufferHandle m_LightIndexMappingBuffer;
     nvrhi::BufferHandle m_GeometryInstanceToLightBuffer;
     nvrhi::TextureHandle m_LocalLightPdfTexture;

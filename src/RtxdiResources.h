@@ -31,6 +31,7 @@ private:
 public:
     nvrhi::BufferHandle TaskBuffer;
     nvrhi::BufferHandle PrimitiveLightBuffer;
+    nvrhi::BufferHandle VirtualLightBuffer;
     nvrhi::BufferHandle LightDataBuffer;
     nvrhi::BufferHandle GeometryInstanceToLightBuffer;
     nvrhi::BufferHandle LightIndexMappingBuffer;
