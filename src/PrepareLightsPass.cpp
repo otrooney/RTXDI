@@ -346,7 +346,9 @@ RTXDI_LightBufferParameters PrepareLightsPass::Process(
     nvrhi::ICommandList* commandList, 
     const rtxdi::ReSTIRDIContext& context,
     const std::vector<std::shared_ptr<donut::engine::Light>>& sceneLights,
-    bool enableImportanceSampledEnvironmentLight)
+    bool enableImportanceSampledEnvironmentLight,
+    bool enableGSGIVirtualLights,
+    GSGI_Parameters gsgiParams)
 {
     RTXDI_LightBufferParameters outLightBufferParams = {};
     const rtxdi::ReSTIRDIStaticParameters& contextParameters = context.getStaticParameters();
@@ -356,6 +358,38 @@ RTXDI_LightBufferParameters PrepareLightsPass::Process(
     std::vector<PrepareLightsTask> tasks;
     std::vector<PolymorphicLightInfo> primitiveLightInfos;
     uint32_t lightBufferOffset = 0;
+
+    if (enableGSGIVirtualLights)
+    {
+        // For virtual lights we create a task for every light (including those carried over from previous frames)
+        // This ensures the local light PDF texture is properly built, but there's likely room for optimisation here.
+        uint32_t startOfNewLights = (context.getFrameIndex() % gsgiParams.sampleLifespan) * gsgiParams.samplesPerFrame;
+        uint32_t endOfNewLights = startOfNewLights + gsgiParams.samplesPerFrame;
+
+        while (lightBufferOffset < gsgiParams.samplesPerFrame * gsgiParams.sampleLifespan)
+        {
+            bool isNewVirtualLight = (lightBufferOffset >= startOfNewLights) && (lightBufferOffset < endOfNewLights);
+            PrepareLightsTask task;
+            task.lightBufferOffset = lightBufferOffset;
+            task.triangleCount = 1; // technically zero, but we need to allocate 1 thread in the grid to process this light
+
+            if (isNewVirtualLight)
+            {
+                uint32_t virtualLightInstance = lightBufferOffset - startOfNewLights;
+
+                task.instanceAndGeometryIndex = TASK_VIRTUAL_LIGHT_BIT | virtualLightInstance;
+                task.previousLightBufferOffset = -1;
+            }
+
+            task.instanceAndGeometryIndex = TASK_VIRTUAL_LIGHT_BIT;
+            task.previousLightBufferOffset = lightBufferOffset;
+
+            lightBufferOffset += task.triangleCount;
+
+            tasks.push_back(task);
+        }
+    }
+    
     std::vector<uint32_t> geometryInstanceToLight(m_Scene->GetSceneGraph()->GetGeometryInstancesCount(), RTXDI_INVALID_LIGHT_INDEX);
 
     const auto& instances = m_Scene->GetSceneGraph()->GetMeshInstances();

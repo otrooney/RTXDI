@@ -607,13 +607,17 @@ public:
         
         uint2 environmentMapSize = uint2(environmentMap->getDesc().width, environmentMap->getDesc().height);
 
+        GSGI_Parameters gsgiSettings = m_ui.lightingSettings.gsgiParams;
+
         if (m_RtxdiResources && (
             environmentMapSize.x != m_RtxdiResources->EnvironmentPdfTexture->getDesc().width ||
             environmentMapSize.y != m_RtxdiResources->EnvironmentPdfTexture->getDesc().height ||
             numEmissiveMeshes > m_RtxdiResources->GetMaxEmissiveMeshes() ||
             numEmissiveTriangles > m_RtxdiResources->GetMaxEmissiveTriangles() || 
             numPrimitiveLights > m_RtxdiResources->GetMaxPrimitiveLights() ||
-            numGeometryInstances > m_RtxdiResources->GetMaxGeometryInstances()))
+            numGeometryInstances > m_RtxdiResources->GetMaxGeometryInstances() ||
+            gsgiSettings.samplesPerFrame != m_RtxdiResources->GetGSGIsamplesPerFrame() ||
+            gsgiSettings.sampleLifespan != m_RtxdiResources->GetGSGIsampleLifespan()))
         {
             m_RtxdiResources = nullptr;
         }
@@ -664,8 +668,6 @@ public:
             uint32_t meshAllocationQuantum = 128;
             uint32_t triangleAllocationQuantum = 1024;
             uint32_t primitiveAllocationQuantum = 128;
-
-            GSGI_Parameters gsgiSettings = m_ui.lightingSettings.gsgiParams;
 
             m_RtxdiResources = std::make_unique<RtxdiResources>(
                 GetDevice(), 
@@ -1148,6 +1150,8 @@ public:
         restirDIContext.setFrameIndex(effectiveFrameIndex);
         m_isContext->getReSTIRGIContext().setFrameIndex(effectiveFrameIndex);
 
+        bool enableGSGIPass = m_ui.indirectLightingMode == IndirectLightingMode::GSGI;
+
         {
             ProfilerScope scope(*m_Profiler, m_CommandList, ProfilerSection::MeshProcessing);
             
@@ -1155,7 +1159,9 @@ public:
                 m_CommandList,
                 restirDIContext,
                 m_Scene->GetSceneGraph()->GetLights(),
-                m_EnvironmentMapPdfMipmapPass != nullptr && m_ui.environmentMapImportanceSampling);
+                m_EnvironmentMapPdfMipmapPass != nullptr && m_ui.environmentMapImportanceSampling,
+                enableGSGIPass,
+                m_ui.lightingSettings.gsgiParams);
             m_isContext->setLightBufferParams(lightBufferParams);
 
             auto initialSamplingParams = restirDIContext.getInitialSamplingParameters();
@@ -1204,7 +1210,6 @@ public:
         bool enableDirectReStirPass = m_ui.directLightingMode == DirectLightingMode::ReStir;
         bool enableBrdfAndIndirectPass = m_ui.directLightingMode == DirectLightingMode::Brdf || m_ui.indirectLightingMode != IndirectLightingMode::None;
         bool enableIndirect = m_ui.indirectLightingMode != IndirectLightingMode::None;
-        bool enableGSGIPass = m_ui.indirectLightingMode == IndirectLightingMode::GSGI;
 
         // When indirect lighting is enabled, we don't want ReSTIR to be the NRD front-end,
         // it should just write out the raw color data.

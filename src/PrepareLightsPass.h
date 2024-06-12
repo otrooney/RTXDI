@@ -15,6 +15,7 @@
 #include <rtxdi/ReSTIRDI.h>
 #include <memory>
 #include <unordered_map>
+#include "../shaders/GSGIParameters.h"
 
 
 namespace donut::engine
@@ -71,5 +72,7 @@ public:
         nvrhi::ICommandList* commandList, 
         const rtxdi::ReSTIRDIContext& context, 
         const std::vector<std::shared_ptr<donut::engine::Light>>& sceneLights,
-        bool enableImportanceSampledEnvironmentLight);
+        bool enableImportanceSampledEnvironmentLight,
+        bool enableGSGIVirtualLights,
+        GSGI_Parameters gsgiParams);
 };

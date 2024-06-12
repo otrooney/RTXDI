@@ -25,6 +25,7 @@ StructuredBuffer<PolymorphicLightInfo> t_PrimitiveLights : register(t1);
 StructuredBuffer<InstanceData> t_InstanceData : register(t2);
 StructuredBuffer<GeometryData> t_GeometryData : register(t3);
 StructuredBuffer<MaterialConstants> t_MaterialConstants : register(t4);
+StructuredBuffer<PolymorphicLightInfo> t_VirtualLights : register(t5);
 SamplerState s_MaterialSampler : register(s0);
 
 VK_BINDING(0, 1) ByteAddressBuffer t_BindlessBuffers[] : register(t0, space1);
@@ -79,10 +80,25 @@ void main(uint dispatchThreadId : SV_DispatchThreadID, uint groupThreadId : SV_G
 
     uint triangleIdx = dispatchThreadId - task.lightBufferOffset;
     bool isPrimitiveLight = (task.instanceAndGeometryIndex & TASK_PRIMITIVE_LIGHT_BIT) != 0;
+    bool isVirtualLight = (task.instanceAndGeometryIndex & TASK_VIRTUAL_LIGHT_BIT) != 0;
     
     PolymorphicLightInfo lightInfo = (PolymorphicLightInfo)0;
 
-    if (!isPrimitiveLight)
+    if (isVirtualLight)
+    {
+        if (task.previousLightBufferOffset < 0)
+        {
+            // If it's a new light, we pull it from the virtual light buffer
+            uint virtualLightIndex = task.instanceAndGeometryIndex & ~TASK_VIRTUAL_LIGHT_BIT;
+            lightInfo = t_VirtualLights[virtualLightIndex];
+        }
+        else
+        {
+            // Otherwise we pull it from the previous frame light buffer
+            lightInfo = u_LightDataBuffer[g_Const.previousFrameLightOffset + task.previousLightBufferOffset + triangleIdx];
+        }
+    }
+    else if (!isPrimitiveLight)
     {
         InstanceData instance = t_InstanceData[task.instanceAndGeometryIndex >> 12];
         GeometryData geometry = t_GeometryData[instance.firstGeometryIndex + task.instanceAndGeometryIndex & 0xfff];
@@ -190,15 +206,15 @@ void main(uint dispatchThreadId : SV_DispatchThreadID, uint groupThreadId : SV_G
     {
         uint prevBufferPtr = task.previousLightBufferOffset + triangleIdx;
 
-        // Mapping buffer for the previous frame points at the current frame.
-        // Add one to indicate that this is a valid mapping, zero is invalid.
-        u_LightIndexMappingBuffer[g_Const.previousFrameLightOffset + prevBufferPtr] = 
-            g_Const.currentFrameLightOffset + lightBufferPtr + 1;
+    // Mapping buffer for the previous frame points at the current frame.
+    // Add one to indicate that this is a valid mapping, zero is invalid.
+        u_LightIndexMappingBuffer[g_Const.previousFrameLightOffset + prevBufferPtr] =
+        g_Const.currentFrameLightOffset + lightBufferPtr + 1;
 
-        // Mapping buffer for the current frame points at the previous frame.
-        // Add one to indicate that this is a valid mapping, zero is invalid.
-        u_LightIndexMappingBuffer[g_Const.currentFrameLightOffset + lightBufferPtr] = 
-            g_Const.previousFrameLightOffset + prevBufferPtr + 1;
+    // Mapping buffer for the current frame points at the previous frame.
+    // Add one to indicate that this is a valid mapping, zero is invalid.
+        u_LightIndexMappingBuffer[g_Const.currentFrameLightOffset + lightBufferPtr] =
+        g_Const.previousFrameLightOffset + prevBufferPtr + 1;
     }
 
     // Calculate the total flux

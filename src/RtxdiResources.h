@@ -27,6 +27,8 @@ private:
     uint32_t m_MaxEmissiveTriangles = 0;
     uint32_t m_MaxPrimitiveLights = 0;
     uint32_t m_MaxGeometryInstances = 0;
+    uint32_t m_GSGIsamplesPerFrame = 0;
+    uint32_t m_GSGIsampleLifespan = 0;
 
 public:
     nvrhi::BufferHandle TaskBuffer;
@@ -64,4 +66,6 @@ public:
     uint32_t GetMaxEmissiveTriangles() const { return m_MaxEmissiveTriangles; }
     uint32_t GetMaxPrimitiveLights() const { return m_MaxPrimitiveLights; }
     uint32_t GetMaxGeometryInstances() const { return m_MaxGeometryInstances; }
+    uint32_t GetGSGIsamplesPerFrame() const { return m_GSGIsamplesPerFrame; }
+    uint32_t GetGSGIsampleLifespan() const { return m_GSGIsampleLifespan; }
 };

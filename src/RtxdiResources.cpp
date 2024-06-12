@@ -35,8 +35,13 @@ RtxdiResources::RtxdiResources(
     , m_MaxPrimitiveLights(maxPrimitiveLights)
     , m_MaxGeometryInstances(maxGeometryInstances)
 {
+    m_GSGIsamplesPerFrame = GSGIsamplesPerFrame;
+    m_GSGIsampleLifespan = GSGIsampleLifespan;
+
+    uint32_t maxVirtualLights = m_GSGIsamplesPerFrame * m_GSGIsampleLifespan;
+
     nvrhi::BufferDesc taskBufferDesc;
-    taskBufferDesc.byteSize = sizeof(PrepareLightsTask) * (maxEmissiveMeshes + maxPrimitiveLights);
+    taskBufferDesc.byteSize = sizeof(PrepareLightsTask) * (maxEmissiveMeshes + maxPrimitiveLights + maxVirtualLights);
     taskBufferDesc.structStride = sizeof(PrepareLightsTask);
     taskBufferDesc.initialState = nvrhi::ResourceStates::ShaderResource;
     taskBufferDesc.keepInitialState = true;
@@ -80,7 +85,6 @@ RtxdiResources::RtxdiResources(
     risBufferDesc.debugName = "RisLightDataBuffer";
     RisLightDataBuffer = device->createBuffer(risBufferDesc);
 
-    uint32_t maxVirtualLights = GSGIsamplesPerFrame * GSGIsampleLifespan;
     uint32_t maxLocalLights = maxEmissiveTriangles + maxPrimitiveLights + maxVirtualLights;
     uint32_t lightBufferElements = maxLocalLights * 2;
 
