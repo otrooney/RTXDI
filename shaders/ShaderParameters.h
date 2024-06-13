@@ -77,6 +77,10 @@ struct PrepareLightsConstants
     uint numTasks;
     uint currentFrameLightOffset;
     uint previousFrameLightOffset;
+    uint GSGICurrentFrameBlock;
+    uint GSGIPreviousFrameBlock;
+    uint GSGISamplesPerFrame;
+    uint GSGISampleLifespan;
 };
 
 struct PrepareLightsTask

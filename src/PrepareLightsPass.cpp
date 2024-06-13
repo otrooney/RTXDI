@@ -361,35 +361,21 @@ RTXDI_LightBufferParameters PrepareLightsPass::Process(
 
     if (enableGSGIVirtualLights)
     {
-        // For virtual lights we create a task for every light (including those carried over from previous frames)
-        // This ensures the local light PDF texture is properly built, but there's likely room for optimisation here.
-        uint32_t startOfNewLights = (context.getFrameIndex() % gsgiParams.sampleLifespan) * gsgiParams.samplesPerFrame;
-        uint32_t endOfNewLights = startOfNewLights + gsgiParams.samplesPerFrame;
-
-        while (lightBufferOffset < gsgiParams.samplesPerFrame * gsgiParams.sampleLifespan)
+        // For virtual lights we create a task for each new light. The shader also updates the necessary data for previously
+        // generated lights.
+        for (uint32_t virtualLightInstance = 0; virtualLightInstance < gsgiParams.samplesPerFrame; virtualLightInstance++)
         {
-            bool isNewVirtualLight = (lightBufferOffset >= startOfNewLights) && (lightBufferOffset < endOfNewLights);
             PrepareLightsTask task;
             task.lightBufferOffset = lightBufferOffset;
             task.triangleCount = 1; // technically zero, but we need to allocate 1 thread in the grid to process this light
-
-            if (isNewVirtualLight)
-            {
-                uint32_t virtualLightInstance = lightBufferOffset - startOfNewLights;
-
-                task.instanceAndGeometryIndex = TASK_VIRTUAL_LIGHT_BIT | virtualLightInstance;
-                task.previousLightBufferOffset = -1;
-            }
-            else
-            {
-                task.instanceAndGeometryIndex = TASK_VIRTUAL_LIGHT_BIT;
-                task.previousLightBufferOffset = lightBufferOffset;
-            }
+            task.instanceAndGeometryIndex = TASK_VIRTUAL_LIGHT_BIT | virtualLightInstance;
+            task.previousLightBufferOffset = lightBufferOffset;
 
             lightBufferOffset += task.triangleCount;
-
             tasks.push_back(task);
         }
+
+        lightBufferOffset = gsgiParams.samplesPerFrame * gsgiParams.sampleLifespan;
     }
     
     std::vector<uint32_t> geometryInstanceToLight(m_Scene->GetSceneGraph()->GetGeometryInstancesCount(), RTXDI_INVALID_LIGHT_INDEX);
@@ -516,6 +502,10 @@ RTXDI_LightBufferParameters PrepareLightsPass::Process(
     constants.numTasks = uint32_t(tasks.size());
     constants.currentFrameLightOffset = m_MaxLightsInBuffer * m_OddFrame;
     constants.previousFrameLightOffset = m_MaxLightsInBuffer * !m_OddFrame;
+    constants.GSGICurrentFrameBlock = context.getFrameIndex() % gsgiParams.sampleLifespan;
+    constants.GSGIPreviousFrameBlock = (context.getFrameIndex() - 1) % gsgiParams.sampleLifespan;
+    constants.GSGISamplesPerFrame = gsgiParams.samplesPerFrame;
+    constants.GSGISampleLifespan = gsgiParams.sampleLifespan;
     commandList->setPushConstants(&constants, sizeof(constants));
 
     commandList->dispatch(dm::div_ceil(lightBufferOffset, 256));

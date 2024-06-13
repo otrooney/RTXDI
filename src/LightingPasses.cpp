@@ -80,7 +80,7 @@ GSGI_Parameters getDefaultGSGIParams()
     GSGI_Parameters params;
     params.samplesPerFrame = 16384;
     params.sampleLifespan = 8;
-    params.scalingFactor = 1.0f;
+    params.scalingFactor = 0.1f;
     return params;
 }
 
