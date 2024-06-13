@@ -78,8 +78,8 @@ BRDFPathTracing_Parameters getDefaultBRDFPathTracingParams()
 GSGI_Parameters getDefaultGSGIParams()
 {
     GSGI_Parameters params;
-    params.samplesPerFrame = 1024;
-    params.sampleLifespan = 1;
+    params.samplesPerFrame = 16384;
+    params.sampleLifespan = 8;
     params.scalingFactor = 1.0f;
     return params;
 }
@@ -561,11 +561,11 @@ void LightingPasses::GenerateGSGILights(
         1
     };
 
-    ExecuteRayTracingPass(commandList, m_GSGISampleGeometryPass, localSettings.enableRayCounts, "GSGISampleGeometry", dispatchSize, ProfilerSection::GSGI);
+    ExecuteRayTracingPass(commandList, m_GSGISampleGeometryPass, localSettings.enableRayCounts, "GSGISampleGeometry", dispatchSize, ProfilerSection::GSGISampleGeometry);
 
     // nvrhi::utils::BufferUavBarrier(commandList, m_SecondarySurfaceBuffer);
 
-    ExecuteRayTracingPass(commandList, m_GSGICreateLightsPass, localSettings.enableRayCounts, "GSGICreateLights", dispatchSize, ProfilerSection::GSGI);
+    ExecuteRayTracingPass(commandList, m_GSGICreateLightsPass, localSettings.enableRayCounts, "GSGICreateLights", dispatchSize, ProfilerSection::GSGICreateLights);
 }
 
 void LightingPasses::RenderDirectLighting(

@@ -13,6 +13,15 @@ uint globalIndexToGBufferPointer(uint2 GlobalIndex)
     return gbufferIndex;
 }
 
+uint2 globalIndexToDebugVisPointer(uint2 GlobalIndex, uint offset)
+{
+    // Represent as 64px wide 2D for visibility, offset on x axis
+    uint2 debugBufferIndex;
+    debugBufferIndex.x = (GlobalIndex.x % 64) + 512 + offset;
+    debugBufferIndex.y = GlobalIndex.x / 64;
+    return debugBufferIndex;
+}
+
 GSGIGBufferData GetGSGIGBufferData(uint2 GlobalIndex)
 {
     uint gbufferIndex = globalIndexToGBufferPointer(GlobalIndex);
@@ -28,14 +37,14 @@ RAB_Surface ConvertGSGIGBufferToSurface(GSGIGBufferData gsgiGBufferData)
     surface.worldPos = gsgiGBufferData.worldPos;
     surface.normal = gsgiGBufferData.normal;
     surface.geoNormal = gsgiGBufferData.geoNormal;
-    surface.diffuseAlbedo = gsgiGBufferData.diffuseAlbedo;
+    surface.diffuseAlbedo = Unpack_R11G11B10_UFLOAT(gsgiGBufferData.diffuseAlbedo);
     
     // For now, treat all surfaces as 100% diffuse
     surface.diffuseProbability = 1.0f;
-    surface.viewDir = float3(0, 0, 0);
-    surface.viewDepth = 0;
+    surface.viewDir = gsgiGBufferData.normal;
+    surface.viewDepth = 1;
     surface.specularF0 = float3(0, 0, 0);
-    surface.roughness = 1.0f;
+    surface.roughness = 0.0f;
     
     return surface;
 }
@@ -84,8 +93,17 @@ void RayGen()
 
     lightSample.radiance *= visibility.rgb;
     
+    // "Shade" light sample
+    lightSample.radiance *= RTXDI_GetDIReservoirInvPdf(reservoir) / lightSample.solidAnglePdf;
+    SplitBrdf brdf = EvaluateBrdf(surface, lightSample.position);
+    float3 diffuse = brdf.demodulatedDiffuse * lightSample.radiance;
+    
+    float luminance = calcLuminance(diffuse * surface.diffuseAlbedo);
+    
     // Account for distance, sample density and scaling factor
-    lightSample.radiance *= pow(gsgiGBufferData.distance, 2) * gsgiGBufferData.rSampleDensity * gsgiGBufferData.sumOfAdjWeights * g_Const.gsgi.scalingFactor;
+    luminance *= pow(gsgiGBufferData.distance, 2) * gsgiGBufferData.rSampleDensity * gsgiGBufferData.sumOfAdjWeights;
+    luminance *= g_Const.gsgi.scalingFactor;
+    float3 radiance = surface.diffuseAlbedo * luminance;
     
     // Represent as a point light with 180 degree cone
     //LightShaping lightShaping;
@@ -104,10 +122,19 @@ void RayGen()
     // Write to virtual light buffer
     PolymorphicLightInfo lightInfo = (PolymorphicLightInfo) 0;
     lightInfo.center = gsgiGBufferData.worldPos;
-    packLightColor(lightSample.radiance, lightInfo);
+    packLightColor(radiance, lightInfo);
     lightInfo.colorTypeAndFlags |= uint(PolymorphicLightType::kPoint) << kPolymorphicLightTypeShift;
     
     uint gbufferIndex = globalIndexToGBufferPointer(GlobalIndex);
     u_VirtualLightDataBuffer[gbufferIndex] = lightInfo;
+    
+    // Write radiance to debug visualisation buffer (temporary)
+    uint2 debugVisIndex = globalIndexToDebugVisPointer(GlobalIndex, 96);
+    t_GSGIGBufferDiffuseAlbedo[debugVisIndex] = Pack_R11G11B10_UFLOAT(radiance);
+    
+    // Write world position to vis buffer (temporary)
+    uint2 worldPosDebugVisIndex = globalIndexToDebugVisPointer(GlobalIndex, 192);
+    t_GSGIGBufferDiffuseAlbedo[worldPosDebugVisIndex] = Pack_R11G11B10_UFLOAT(gsgiGBufferData.worldPos);
+    
     
 }

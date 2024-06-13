@@ -833,9 +833,9 @@ void UserInterface::SamplingSettings()
 
         if (m_ui.indirectLightingMode == IndirectLightingMode::GSGI)
         {
-            m_ui.resetAccumulation |= ImGui::SliderInt("Samples per frame", (int*)&m_ui.lightingSettings.gsgiParams.samplesPerFrame, 1, 16384);
+            m_ui.resetAccumulation |= ImGui::SliderInt("Samples per frame", (int*)&m_ui.lightingSettings.gsgiParams.samplesPerFrame, 1, 32768);
             m_ui.resetAccumulation |= ImGui::SliderInt("Sample lifespan (frames)", (int*)&m_ui.lightingSettings.gsgiParams.sampleLifespan, 1, 60);
-            m_ui.resetAccumulation |= ImGui::SliderFloat("Scaling factor", &m_ui.lightingSettings.gsgiParams.scalingFactor, 0.01f, 100.0f);
+            m_ui.resetAccumulation |= ImGui::SliderFloat("Scaling factor", &m_ui.lightingSettings.gsgiParams.scalingFactor, 0.01f, 0.5f);
         }
 
         ImGui::TreePop();
@@ -962,6 +962,7 @@ void UserInterface::PostProcessSettings()
             "SpecularConfidence\0"
             "MotionVectors\0"
             "GSGIGBufferAlbedo\0"
+            "LocalLightPdf\0"
         );
         ImGui::PopItemWidth();
 

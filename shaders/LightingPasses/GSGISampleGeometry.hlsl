@@ -43,7 +43,7 @@ uint2 globalIndexToDebugVisPointer(uint2 GlobalIndex)
 {
     // Represent as 64px wide 2D for visibility
     uint2 debugBufferIndex;
-    debugBufferIndex.x = GlobalIndex.x % 64;
+    debugBufferIndex.x = GlobalIndex.x % 64 + 512;
     debugBufferIndex.y = GlobalIndex.x / 64;
     return debugBufferIndex;
 }

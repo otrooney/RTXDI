@@ -380,9 +380,11 @@ RTXDI_LightBufferParameters PrepareLightsPass::Process(
                 task.instanceAndGeometryIndex = TASK_VIRTUAL_LIGHT_BIT | virtualLightInstance;
                 task.previousLightBufferOffset = -1;
             }
-
-            task.instanceAndGeometryIndex = TASK_VIRTUAL_LIGHT_BIT;
-            task.previousLightBufferOffset = lightBufferOffset;
+            else
+            {
+                task.instanceAndGeometryIndex = TASK_VIRTUAL_LIGHT_BIT;
+                task.previousLightBufferOffset = lightBufferOffset;
+            }
 
             lightBufferOffset += task.triangleCount;
 

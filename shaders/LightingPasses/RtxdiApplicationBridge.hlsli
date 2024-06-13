@@ -81,6 +81,7 @@ RWBuffer<uint4> u_RisLightDataBuffer : register(u11);
 RWBuffer<uint> u_RayCountBuffer : register(u12);
 RWStructuredBuffer<SecondaryGBufferData> u_SecondaryGBuffer : register(u13);
 RWStructuredBuffer<GSGIGBufferData> u_GSGIGBuffer : register(u14);
+RWTexture2D<uint> t_GSGIGBufferDiffuseAlbedo : register(u15);
 RWStructuredBuffer<PolymorphicLightInfo> u_VirtualLightDataBuffer : register(u16);
 
 // Other
