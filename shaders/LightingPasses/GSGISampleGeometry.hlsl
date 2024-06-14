@@ -39,11 +39,11 @@ uint globalIndexToGBufferPointer(uint2 GlobalIndex)
     return gbufferIndex;
 }
 
-uint2 globalIndexToDebugVisPointer(uint2 GlobalIndex)
+uint2 globalIndexToDebugVisPointer(uint2 GlobalIndex, uint offset)
 {
-    // Represent as 64px wide 2D for visibility
+    // Represent as 64px wide 2D for visibility, offset on x axis
     uint2 debugBufferIndex;
-    debugBufferIndex.x = GlobalIndex.x % 64 + 512;
+    debugBufferIndex.x = (GlobalIndex.x % 64) + 512 + offset;
     debugBufferIndex.y = GlobalIndex.x / 64;
     return debugBufferIndex;
 }
@@ -83,7 +83,7 @@ void writeToGBuffer(
     u_GSGIGBuffer[gbufferIndex] = gsgiGBufferData;
     
     // Write albedo to debug visualisation buffer (temporary)
-    uint2 debugVisIndex = globalIndexToDebugVisPointer(GlobalIndex);
+    uint2 debugVisIndex = globalIndexToDebugVisPointer(GlobalIndex, 0);
     t_GSGIGBufferDiffuseAlbedo[debugVisIndex] = gsgiGBufferData.diffuseAlbedo;
 
 }

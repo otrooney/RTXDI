@@ -82,8 +82,6 @@ void main(uint dispatchThreadId : SV_DispatchThreadID, uint groupThreadId : SV_G
     bool isPrimitiveLight = (task.instanceAndGeometryIndex & TASK_PRIMITIVE_LIGHT_BIT) != 0;
     bool isVirtualLight = (task.instanceAndGeometryIndex & TASK_VIRTUAL_LIGHT_BIT) != 0;
     
-    PolymorphicLightInfo lightInfo = (PolymorphicLightInfo)0;
-
     if (isVirtualLight)
     {        
         uint virtualLightIndex = task.instanceAndGeometryIndex & ~TASK_VIRTUAL_LIGHT_BIT;
@@ -94,6 +92,8 @@ void main(uint dispatchThreadId : SV_DispatchThreadID, uint groupThreadId : SV_G
             uint blockOffset = blockIndex * g_Const.GSGISamplesPerFrame;
             uint lightBufferPtr = blockOffset + virtualLightIndex + triangleIdx;
             int prevBufferPtr = lightBufferPtr;
+            
+            PolymorphicLightInfo lightInfo = (PolymorphicLightInfo) 0;
             
             if (blockIndex == g_Const.GSGICurrentFrameBlock)
             {
@@ -107,6 +107,11 @@ void main(uint dispatchThreadId : SV_DispatchThreadID, uint groupThreadId : SV_G
                 // If it's from the previous frame, we need to copy it over from that section of the light buffer
                 lightInfo = u_LightDataBuffer[g_Const.previousFrameLightOffset + prevBufferPtr];
                 u_LightDataBuffer[g_Const.currentFrameLightOffset + lightBufferPtr] = lightInfo;
+            }
+            else
+            {
+                // Otherwise grab it from this frame's light buffer to update the PDF texture
+                lightInfo = u_LightDataBuffer[g_Const.currentFrameLightOffset + lightBufferPtr];
             }
             
             if (prevBufferPtr >= 0)
@@ -132,6 +137,8 @@ void main(uint dispatchThreadId : SV_DispatchThreadID, uint groupThreadId : SV_G
     }
     else
     {
+        PolymorphicLightInfo lightInfo = (PolymorphicLightInfo) 0;
+        
         if (!isPrimitiveLight)
         {
             InstanceData instance = t_InstanceData[task.instanceAndGeometryIndex >> 12];
