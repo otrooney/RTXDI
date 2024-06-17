@@ -101,30 +101,21 @@ void RayGen()
     float luminance = calcLuminance(diffuse * surface.diffuseAlbedo);
     
     // Account for distance, sample density and scaling factor
-    luminance *= pow(gsgiGBufferData.distance, 2) * gsgiGBufferData.rSampleDensity * gsgiGBufferData.sumOfAdjWeights;
+    luminance *= gsgiGBufferData.rSampleDensity * gsgiGBufferData.sumOfAdjWeights;
     luminance *= g_Const.gsgi.scalingFactor;
     float3 radiance = surface.diffuseAlbedo * luminance;
     
-    // Represent as a point light with 180 degree cone
-    //LightShaping lightShaping;
-    //lightShaping.cosConeAngle = -1.0;
-    //lightShaping.primaryAxis = gsgiGBufferData.normal;
-    //lightShaping.cosConeSoftness = 1.0;
-    //lightShaping.isSpot = true;
-    //lightShaping.iesProfileIndex = -1;
+    // Represent as a disk light
+    float radius = gsgiGBufferData.distance * 0.1;
     
-    //PointLight pointLight;
-    //pointLight.position = gsgiGBufferData.worldPos;
-    //pointLight.flux = lightSample.radiance;
-    //pointLight.shaping = lightShaping;
-
-    // Represent as a simple point light
-    // Write to virtual light buffer
     PolymorphicLightInfo lightInfo = (PolymorphicLightInfo) 0;
     lightInfo.center = gsgiGBufferData.worldPos;
+    lightInfo.colorTypeAndFlags |= uint(PolymorphicLightType::kDisk) << kPolymorphicLightTypeShift;
     packLightColor(radiance, lightInfo);
-    lightInfo.colorTypeAndFlags |= uint(PolymorphicLightType::kPoint) << kPolymorphicLightTypeShift;
+    lightInfo.scalars = f32tof16(radius);
+    lightInfo.direction1 = ndirToOctUnorm32(gsgiGBufferData.geoNormal);
     
+    // Write to virtual light buffer
     uint gbufferIndex = globalIndexToGBufferPointer(GlobalIndex);
     u_VirtualLightDataBuffer[gbufferIndex] = lightInfo;
     

@@ -324,10 +324,10 @@ void LightingPasses::createReGIRPipeline(const rtxdi::ReGIRStaticParameters& reg
     }
 }
 
-void LightingPasses::createGSGIPipelines(bool useRayQuery)
+void LightingPasses::createGSGIPipelines(const std::vector<donut::engine::ShaderMacro>& regirMacros, bool useRayQuery)
 {
     m_GSGISampleGeometryPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGISampleGeometry.hlsl", {}, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
-    m_GSGICreateLightsPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGICreateLights.hlsl", {}, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
+    m_GSGICreateLightsPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGICreateLights.hlsl", regirMacros, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
 }
 
 void LightingPasses::createReSTIRDIPipelines(const std::vector<donut::engine::ShaderMacro>& regirMacros, bool useRayQuery)
@@ -360,7 +360,7 @@ void LightingPasses::CreatePipelines(const rtxdi::ReGIRStaticParameters& regirSt
     createReGIRPipeline(regirStaticParams, regirMacros);
     createReSTIRDIPipelines(regirMacros, useRayQuery);
     createReSTIRGIPipelines(useRayQuery);
-    createGSGIPipelines(useRayQuery);
+    createGSGIPipelines(regirMacros, useRayQuery);
 }
 
 #if WITH_NRD
