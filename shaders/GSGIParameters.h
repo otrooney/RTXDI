@@ -4,11 +4,20 @@
 
 #include <rtxdi/ReSTIRDIParameters.h>
 
+enum VirtualLightType
+{
+    Point,
+    Disk,
+    Spot
+};
+
 struct GSGI_Parameters
 {
     uint32_t samplesPerFrame;
     uint32_t sampleLifespan;
     float scalingFactor;
+    float boilingFilter;
+    VirtualLightType virtualLightType;
 };
 
 #endif // RTXDI_BRDFPT_PARAMETERS_H

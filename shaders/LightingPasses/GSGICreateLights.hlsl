@@ -27,7 +27,6 @@ GSGIGBufferData GetGSGIGBufferData(uint2 GlobalIndex)
     uint gbufferIndex = globalIndexToGBufferPointer(GlobalIndex);
     GSGIGBufferData gsgiGBufferData = u_GSGIGBuffer[gbufferIndex];
     return gsgiGBufferData;
-
 }
 
 RAB_Surface ConvertGSGIGBufferToSurface(GSGIGBufferData gsgiGBufferData)
@@ -100,20 +99,50 @@ void RayGen()
     
     float luminance = calcLuminance(diffuse * surface.diffuseAlbedo);
     
-    // Account for distance, sample density and scaling factor
-    luminance *= gsgiGBufferData.rSampleDensity * gsgiGBufferData.sumOfAdjWeights;
+    // Account for scaling factor
     luminance *= g_Const.gsgi.scalingFactor;
+    luminance = min(luminance, g_Const.gsgi.boilingFilter);
+    
+    luminance *= gsgiGBufferData.rSampleDensity * gsgiGBufferData.sumOfAdjWeights;
     float3 radiance = surface.diffuseAlbedo * luminance;
     
-    // Represent as a disk light
-    float radius = gsgiGBufferData.distance * 0.1;
-    
     PolymorphicLightInfo lightInfo = (PolymorphicLightInfo) 0;
-    lightInfo.center = gsgiGBufferData.worldPos;
-    lightInfo.colorTypeAndFlags |= uint(PolymorphicLightType::kDisk) << kPolymorphicLightTypeShift;
-    packLightColor(radiance, lightInfo);
-    lightInfo.scalars = f32tof16(radius);
-    lightInfo.direction1 = ndirToOctUnorm32(gsgiGBufferData.geoNormal);
+    
+    if (g_Const.gsgi.virtualLightType == VirtualLightType::Disk)
+    {
+        // Represent as a disk light
+        float radius = gsgiGBufferData.distance * 0.1;
+
+        packLightColor(radiance, lightInfo);
+        lightInfo.center = gsgiGBufferData.worldPos;
+        lightInfo.colorTypeAndFlags |= uint(PolymorphicLightType::kDisk) << kPolymorphicLightTypeShift;
+        lightInfo.scalars = f32tof16(radius);
+        lightInfo.direction1 = ndirToOctUnorm32(gsgiGBufferData.normal);
+    }
+    else if (g_Const.gsgi.virtualLightType == VirtualLightType::Spot)
+    {
+        // Represent as a spot light
+        float radius = gsgiGBufferData.distance * 0.1;
+
+        packLightColor(radiance, lightInfo);
+        lightInfo.colorTypeAndFlags |= uint(PolymorphicLightType::kSphere) << kPolymorphicLightTypeShift;
+        lightInfo.colorTypeAndFlags |= kPolymorphicLightShapingEnableBit;
+        lightInfo.center = gsgiGBufferData.worldPos;
+        lightInfo.scalars = f32tof16(radius);
+        
+        lightInfo.primaryAxis = ndirToOctUnorm32(gsgiGBufferData.normal);
+        lightInfo.cosConeAngleAndSoftness = f32tof16(-1.0f);
+        lightInfo.cosConeAngleAndSoftness |= f32tof16(0.0f) << 16;
+    }
+    else
+    {
+        // Represent as a point light
+        radiance *= gsgiGBufferData.distance * gsgiGBufferData.distance * 0.01;
+        
+        packLightColor(radiance, lightInfo);
+        lightInfo.center = gsgiGBufferData.worldPos;
+        lightInfo.colorTypeAndFlags |= uint(PolymorphicLightType::kPoint) << kPolymorphicLightTypeShift;
+    }
     
     // Write to virtual light buffer
     uint gbufferIndex = globalIndexToGBufferPointer(GlobalIndex);

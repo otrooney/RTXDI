@@ -66,8 +66,8 @@ void writeToGBuffer(
     
         gsgiGBufferData.worldPos = ray.Origin + ray.Direction * payload.committedRayT;
         gsgiGBufferData.diffuseAlbedo = Pack_R11G11B10_UFLOAT(ms.diffuseAlbedo);
-        gsgiGBufferData.normal = ms.shadingNormal;
-        gsgiGBufferData.geoNormal = gs.geometryNormal;
+        gsgiGBufferData.normal = gs.flatNormal;
+        gsgiGBufferData.geoNormal = gs.flatNormal;
         gsgiGBufferData.distance = payload.committedRayT;
         gsgiGBufferData.rSampleDensity = rDensity;
         gsgiGBufferData.sumOfAdjWeights = payload.sumOfAdjWeights;
@@ -105,15 +105,19 @@ void RayGen()
     uint2 GlobalIndex = DispatchRaysIndex().xy;
     RandomSamplerState rng = initRandomSampler(GlobalIndex, g_Const.frameIndex);
     
-    float theta = 2 * c_pi * sampleUniformRng(rng);
-    float phi = acos(1 - 2 * sampleUniformRng(rng));
-    float dirX = sin(phi) * cos(theta);
-    float dirY = sin(phi) * sin(theta);
-    float dirZ = cos(phi);
+    //float theta = 2 * c_pi * sampleUniformRng(rng);
+    //float phi = acos(1 - 2 * sampleUniformRng(rng));
+    //float dirX = sin(phi) * cos(theta);
+    //float dirY = sin(phi) * sin(theta);
+    //float dirZ = cos(phi);
+    
+    float2 rands = float2(sampleUniformRng(rng), sampleUniformRng(rng));
+    float solidAnglePdf;
+    float3 sphereSample = sampleSphere(rands, solidAnglePdf);
     
     RayDesc ray;
     ray.Origin = g_Const.view.cameraDirectionOrPosition.xyz;
-    ray.Direction = float3(dirX, dirY, dirZ);
+    ray.Direction = sphereSample;
     ray.TMin = 0.0f;
     ray.TMax = 1e+30f;
     

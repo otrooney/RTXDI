@@ -81,6 +81,8 @@ GSGI_Parameters getDefaultGSGIParams()
     params.samplesPerFrame = 16384;
     params.sampleLifespan = 8;
     params.scalingFactor = 0.1f;
+    params.boilingFilter = 0.1f;
+    params.virtualLightType = Point;
     return params;
 }
 
