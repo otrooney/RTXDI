@@ -61,13 +61,13 @@ void writeToGBuffer(
     {
         GeometrySample gs = getGeometryFromHit(payload.instanceID, payload.geometryIndex, payload.primitiveIndex, payload.barycentrics,
             GeomAttr_All, t_InstanceData, t_GeometryData, t_MaterialConstants);
-    
+            
         MaterialSample ms = sampleGeometryMaterial(gs, 0, 0, 0, MatAttr_BaseColor | MatAttr_Normal, s_MaterialSampler);
-    
+
         gsgiGBufferData.worldPos = ray.Origin + ray.Direction * payload.committedRayT;
         gsgiGBufferData.diffuseAlbedo = Pack_R11G11B10_UFLOAT(ms.diffuseAlbedo);
-        gsgiGBufferData.normal = gs.flatNormal;
-        gsgiGBufferData.geoNormal = gs.flatNormal;
+        gsgiGBufferData.normal = ms.shadingNormal;
+        gsgiGBufferData.geoNormal = gs.geometryNormal;
         gsgiGBufferData.distance = payload.committedRayT;
         gsgiGBufferData.rSampleDensity = rDensity;
         gsgiGBufferData.sumOfAdjWeights = payload.sumOfAdjWeights;
@@ -110,14 +110,15 @@ void RayGen()
     //float dirX = sin(phi) * cos(theta);
     //float dirY = sin(phi) * sin(theta);
     //float dirZ = cos(phi);
+    //float3 direction = float3(dirX, dirY, dirZ);
     
     float2 rands = float2(sampleUniformRng(rng), sampleUniformRng(rng));
     float solidAnglePdf;
-    float3 sphereSample = sampleSphere(rands, solidAnglePdf);
+    float3 direction = sampleSphere(rands, solidAnglePdf);
     
     RayDesc ray;
     ray.Origin = g_Const.view.cameraDirectionOrPosition.xyz;
-    ray.Direction = sphereSample;
+    ray.Direction = direction;
     ray.TMin = 0.0f;
     ray.TMax = 1e+30f;
     

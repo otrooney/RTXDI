@@ -40,7 +40,7 @@ RAB_Surface ConvertGSGIGBufferToSurface(GSGIGBufferData gsgiGBufferData)
     
     // For now, treat all surfaces as 100% diffuse
     surface.diffuseProbability = 1.0f;
-    surface.viewDir = gsgiGBufferData.normal;
+    surface.viewDir = -gsgiGBufferData.normal;
     surface.viewDepth = 1;
     surface.specularF0 = float3(0, 0, 0);
     surface.roughness = 0.0f;
@@ -57,7 +57,7 @@ void RayGen()
 #endif
 {
     // Largely duplicated from DIGenerateInitialSamples.hlsl, but we go straight to final visibility
-    // testing, as we're not doing spatial or temporal resampling
+    // testing, as we're not doing resampling (yet)
 #if !USE_RAY_QUERY
     uint2 GlobalIndex = DispatchRaysIndex().xy;
 #endif
@@ -104,25 +104,27 @@ void RayGen()
     luminance = min(luminance, g_Const.gsgi.boilingFilter);
     
     luminance *= gsgiGBufferData.rSampleDensity * gsgiGBufferData.sumOfAdjWeights;
-    float3 radiance = surface.diffuseAlbedo * luminance;
+    float3 radiance = surface.diffuseAlbedo * luminance * 0.01;
     
     PolymorphicLightInfo lightInfo = (PolymorphicLightInfo) 0;
     
     if (g_Const.gsgi.virtualLightType == VirtualLightType::Disk)
     {
         // Represent as a disk light
-        float radius = gsgiGBufferData.distance * 0.1;
+        float radius = gsgiGBufferData.distance * g_Const.gsgi.lightSize;
+        radiance /= pow(g_Const.gsgi.lightSize, 2);
 
         packLightColor(radiance, lightInfo);
         lightInfo.center = gsgiGBufferData.worldPos;
         lightInfo.colorTypeAndFlags |= uint(PolymorphicLightType::kDisk) << kPolymorphicLightTypeShift;
         lightInfo.scalars = f32tof16(radius);
-        lightInfo.direction1 = ndirToOctUnorm32(gsgiGBufferData.normal);
+        lightInfo.direction1 = ndirToOctUnorm32(gsgiGBufferData.geoNormal);
     }
     else if (g_Const.gsgi.virtualLightType == VirtualLightType::Spot)
     {
         // Represent as a spot light
-        float radius = gsgiGBufferData.distance * 0.1;
+        float radius = gsgiGBufferData.distance * g_Const.gsgi.lightSize;
+        radiance /= pow(g_Const.gsgi.lightSize, 2);
 
         packLightColor(radiance, lightInfo);
         lightInfo.colorTypeAndFlags |= uint(PolymorphicLightType::kSphere) << kPolymorphicLightTypeShift;
@@ -130,14 +132,14 @@ void RayGen()
         lightInfo.center = gsgiGBufferData.worldPos;
         lightInfo.scalars = f32tof16(radius);
         
-        lightInfo.primaryAxis = ndirToOctUnorm32(gsgiGBufferData.normal);
+        lightInfo.primaryAxis = ndirToOctUnorm32(gsgiGBufferData.geoNormal);
         lightInfo.cosConeAngleAndSoftness = f32tof16(-1.0f);
         lightInfo.cosConeAngleAndSoftness |= f32tof16(0.0f) << 16;
     }
     else
     {
         // Represent as a point light
-        radiance *= gsgiGBufferData.distance * gsgiGBufferData.distance * 0.01;
+        radiance *= gsgiGBufferData.distance * gsgiGBufferData.distance;
         
         packLightColor(radiance, lightInfo);
         lightInfo.center = gsgiGBufferData.worldPos;
@@ -156,5 +158,11 @@ void RayGen()
     uint2 worldPosDebugVisIndex = globalIndexToDebugVisPointer(GlobalIndex, 192);
     t_GSGIGBufferDiffuseAlbedo[worldPosDebugVisIndex] = Pack_R11G11B10_UFLOAT(gsgiGBufferData.worldPos);
     
+    // Write normal to vis buffer (temporary)
+    uint2 normalDebugVisIndex = globalIndexToDebugVisPointer(GlobalIndex, 288);
+    t_GSGIGBufferNormals[normalDebugVisIndex] = ndirToOctUnorm32(gsgiGBufferData.normal);
     
+    // Write geonormal to vis buffer (temporary)
+    uint2 geonormalDebugVisIndex = globalIndexToDebugVisPointer(GlobalIndex, 384);
+    t_GSGIGBufferNormals[geonormalDebugVisIndex] = ndirToOctUnorm32(gsgiGBufferData.geoNormal);
 }

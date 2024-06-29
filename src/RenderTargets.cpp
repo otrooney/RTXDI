@@ -112,6 +112,10 @@ RenderTargets::RenderTargets(nvrhi::IDevice* device, int2 size)
     desc.debugName = "GSGIGBufferAlbedo";
     GSGIGBufferAlbedo = device->createTexture(desc);
 
+    desc.format = nvrhi::Format::R32_UINT;
+    desc.debugName = "GSGIGBufferNormals";
+    GSGIGBufferNormals = device->createTexture(desc);
+
     GBufferFramebuffer = std::make_shared<engine::FramebufferFactory>(device);
     GBufferFramebuffer->DepthTarget = DeviceDepth;
     GBufferFramebuffer->RenderTargets = {

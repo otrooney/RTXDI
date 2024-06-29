@@ -18,6 +18,7 @@ struct GSGI_Parameters
     float scalingFactor;
     float boilingFilter;
     VirtualLightType virtualLightType;
+    float lightSize;
 };
 
 #endif // RTXDI_BRDFPT_PARAMETERS_H

@@ -1498,6 +1498,10 @@ public:
                 m_DebugVizPasses->RenderUnpackedGSGIDiffuseAlbeo(m_CommandList, m_UpscaledView);
                 m_CommonPasses->BlitTexture(m_CommandList, framebuffer, m_RenderTargets->DebugColor, &m_BindingCache);
                 break;
+            case GSGIGBufferNormals:
+                m_DebugVizPasses->RenderUnpackedGSGINormals(m_CommandList, m_UpscaledView);
+                m_CommonPasses->BlitTexture(m_CommandList, framebuffer, m_RenderTargets->DebugColor, &m_BindingCache);
+                break;
             case DebugRenderOutput::LocalLightPdf:
                 m_CommonPasses->BlitTexture(m_CommandList, framebuffer, m_RtxdiResources->LocalLightPdfTexture, &m_BindingCache);
                 break;

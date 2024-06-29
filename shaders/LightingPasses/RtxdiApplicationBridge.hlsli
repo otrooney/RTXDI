@@ -83,6 +83,7 @@ RWStructuredBuffer<SecondaryGBufferData> u_SecondaryGBuffer : register(u13);
 RWStructuredBuffer<GSGIGBufferData> u_GSGIGBuffer : register(u14);
 RWTexture2D<uint> t_GSGIGBufferDiffuseAlbedo : register(u15);
 RWStructuredBuffer<PolymorphicLightInfo> u_VirtualLightDataBuffer : register(u16);
+RWTexture2D<uint> t_GSGIGBufferNormals : register(u17);
 
 // Other
 ConstantBuffer<ResamplingConstants> g_Const : register(b0);

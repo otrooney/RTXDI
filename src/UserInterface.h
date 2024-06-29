@@ -105,6 +105,7 @@ enum DebugRenderOutput
     SpecularConfidence,
     MotionVectors,
     GSGIGBufferAlbedo,
+    GSGIGBufferNormals,
     LocalLightPdf
 };
 

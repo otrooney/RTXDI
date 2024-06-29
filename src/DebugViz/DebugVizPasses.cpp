@@ -21,7 +21,8 @@ DebugVizPasses::DebugVizPasses(
     m_GBufferGeoNormalsViz(std::make_unique<PackedDataVizPass>(device, shaderFactory, scene, bindlessLayout)),
     m_GBufferDiffuseAlbedoViz(std::make_unique<PackedDataVizPass>(device, shaderFactory, scene, bindlessLayout)),
     m_GBufferSpecularRoughnessViz(std::make_unique<PackedDataVizPass>(device, shaderFactory, scene, bindlessLayout)),
-    m_GSGIGBufferAlbedoViz(std::make_unique<PackedDataVizPass>(device, shaderFactory, scene, bindlessLayout))
+    m_GSGIGBufferAlbedoViz(std::make_unique<PackedDataVizPass>(device, shaderFactory, scene, bindlessLayout)),
+    m_GSGIGBufferNormalViz(std::make_unique<PackedDataVizPass>(device, shaderFactory, scene, bindlessLayout))
 {
 
 }
@@ -33,6 +34,7 @@ void DebugVizPasses::CreatePipelines()
     m_GBufferDiffuseAlbedoViz->CreatePipeline("app/DebugViz/PackedR11G11B10UFloatViz.hlsl");
     m_GBufferSpecularRoughnessViz->CreatePipeline("app/DebugViz/PackedR8G8B8A8GammaUFloatViz.hlsl");
     m_GSGIGBufferAlbedoViz->CreatePipeline("app/DebugViz/PackedR11G11B10UFloatViz.hlsl");
+    m_GSGIGBufferNormalViz->CreatePipeline("app/DebugViz/NDirOctUNorm32Viz.hlsl");
 }
 
 void DebugVizPasses::CreateBindingSets(RenderTargets& renderTargets, nvrhi::TextureHandle dst)
@@ -42,6 +44,7 @@ void DebugVizPasses::CreateBindingSets(RenderTargets& renderTargets, nvrhi::Text
     m_GBufferDiffuseAlbedoViz->CreateBindingSet(renderTargets.GBufferDiffuseAlbedo, renderTargets.PrevGBufferDiffuseAlbedo, renderTargets.DebugColor);
     m_GBufferSpecularRoughnessViz->CreateBindingSet(renderTargets.GBufferSpecularRough, renderTargets.PrevGBufferSpecularRough, renderTargets.DebugColor);
     m_GSGIGBufferAlbedoViz->CreateBindingSet(renderTargets.GSGIGBufferAlbedo, renderTargets.GSGIGBufferAlbedo, renderTargets.DebugColor);
+    m_GSGIGBufferNormalViz->CreateBindingSet(renderTargets.GSGIGBufferNormals, renderTargets.GSGIGBufferNormals, renderTargets.DebugColor);
 }
 
 void DebugVizPasses::RenderUnpackedNormals(nvrhi::ICommandList* commandList, const donut::engine::IView& view)
@@ -67,6 +70,11 @@ void DebugVizPasses::RenderUnpackedSpecularRoughness(nvrhi::ICommandList* comman
 void DebugVizPasses::RenderUnpackedGSGIDiffuseAlbeo(nvrhi::ICommandList* commandList, const donut::engine::IView& view)
 {
     m_GSGIGBufferAlbedoViz->Render(commandList, view);
+}
+
+void DebugVizPasses::RenderUnpackedGSGINormals(nvrhi::ICommandList* commandList, const donut::engine::IView& view)
+{
+    m_GSGIGBufferNormalViz->Render(commandList, view);
 }
 
 void DebugVizPasses::NextFrame()

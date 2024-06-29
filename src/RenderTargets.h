@@ -61,6 +61,7 @@ public:
     nvrhi::TextureHandle DebugColor;
     nvrhi::TextureHandle ReferenceColor;
     nvrhi::TextureHandle GSGIGBufferAlbedo;
+    nvrhi::TextureHandle GSGIGBufferNormals;
 
     std::shared_ptr<donut::engine::FramebufferFactory> LdrFramebuffer;
     std::shared_ptr<donut::engine::FramebufferFactory> ResolvedFramebuffer;
