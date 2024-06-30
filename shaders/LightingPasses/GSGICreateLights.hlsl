@@ -103,8 +103,8 @@ void RayGen()
     luminance *= g_Const.gsgi.scalingFactor;
     luminance = min(luminance, g_Const.gsgi.boilingFilter);
     
-    luminance *= gsgiGBufferData.rSampleDensity * gsgiGBufferData.sumOfAdjWeights;
-    float3 radiance = surface.diffuseAlbedo * luminance * 0.01;
+    luminance *= gsgiGBufferData.rSampleDensity * gsgiGBufferData.sumOfWeights / gsgiGBufferData.sampleWeight;
+    float3 radiance = surface.diffuseAlbedo * luminance;
     
     PolymorphicLightInfo lightInfo = (PolymorphicLightInfo) 0;
     
@@ -158,11 +158,15 @@ void RayGen()
     uint2 worldPosDebugVisIndex = globalIndexToDebugVisPointer(GlobalIndex, 192);
     t_GSGIGBufferDiffuseAlbedo[worldPosDebugVisIndex] = Pack_R11G11B10_UFLOAT(gsgiGBufferData.worldPos);
     
+    // Write sum of weights to vis buffer (temporary)
+    uint2 sumOfWeightsDebugVisIndex = globalIndexToDebugVisPointer(GlobalIndex, 288);
+    t_GSGIGBufferDiffuseAlbedo[sumOfWeightsDebugVisIndex] = Pack_R11G11B10_UFLOAT(float3(gsgiGBufferData.sumOfWeights, 0.0f, 0.0f));
+    
     // Write normal to vis buffer (temporary)
-    uint2 normalDebugVisIndex = globalIndexToDebugVisPointer(GlobalIndex, 288);
+    uint2 normalDebugVisIndex = globalIndexToDebugVisPointer(GlobalIndex, 96);
     t_GSGIGBufferNormals[normalDebugVisIndex] = ndirToOctUnorm32(gsgiGBufferData.normal);
     
     // Write geonormal to vis buffer (temporary)
-    uint2 geonormalDebugVisIndex = globalIndexToDebugVisPointer(GlobalIndex, 384);
+    uint2 geonormalDebugVisIndex = globalIndexToDebugVisPointer(GlobalIndex, 192);
     t_GSGIGBufferNormals[geonormalDebugVisIndex] = ndirToOctUnorm32(gsgiGBufferData.geoNormal);
 }

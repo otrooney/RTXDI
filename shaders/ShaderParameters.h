@@ -280,7 +280,8 @@ struct GSGIGBufferData
     float3 geoNormal;
 
     float rSampleDensity;
-    float sumOfAdjWeights;
+    float sampleWeight;
+    float sumOfWeights;
 };
 
 static const uint kSecondaryGBuffer_IsSpecularRay = 1;

@@ -78,12 +78,12 @@ BRDFPathTracing_Parameters getDefaultBRDFPathTracingParams()
 GSGI_Parameters getDefaultGSGIParams()
 {
     GSGI_Parameters params;
-    params.samplesPerFrame = 16384;
+    params.samplesPerFrame = 32768;
     params.sampleLifespan = 8;
     params.scalingFactor = 0.1f;
     params.boilingFilter = 0.1f;
     params.virtualLightType = Point;
-    params.lightSize = 0.1f;
+    params.lightSize = 0.01f;
     return params;
 }
 

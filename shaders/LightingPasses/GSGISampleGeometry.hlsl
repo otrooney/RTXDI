@@ -27,8 +27,8 @@ struct RayPayload
     uint geometryIndex;
     uint primitiveIndex;
     float2 barycentrics;
+    float sampleWeight;
     float sumOfWeights;
-    float sumOfAdjWeights;
     RandomSamplerState rngState;
 };
 
@@ -70,12 +70,19 @@ void writeToGBuffer(
         gsgiGBufferData.geoNormal = gs.geometryNormal;
         gsgiGBufferData.distance = payload.committedRayT;
         gsgiGBufferData.rSampleDensity = rDensity;
-        gsgiGBufferData.sumOfAdjWeights = payload.sumOfAdjWeights;
+        gsgiGBufferData.sampleWeight = payload.sampleWeight;
+        gsgiGBufferData.sumOfWeights = payload.sumOfWeights;
     }
     else
     {
         gsgiGBufferData.worldPos = float3(0, 0, 0);
         gsgiGBufferData.diffuseAlbedo = 0;
+        gsgiGBufferData.normal = float3(0, 0, 0);
+        gsgiGBufferData.geoNormal = float3(0, 0, 0);
+        gsgiGBufferData.distance = 0.0f;
+        gsgiGBufferData.rSampleDensity = 1.0f;
+        gsgiGBufferData.sampleWeight = 0.0f;
+        gsgiGBufferData.sumOfWeights = 0.0f;
     }
     
     // Write to GSGI G buffer
@@ -127,8 +134,8 @@ void RayGen()
     payload.instanceID = ~0u;
     payload.primitiveIndex = 0;
     payload.barycentrics = 0;
+    payload.sampleWeight = 0;
     payload.sumOfWeights = 0;
-    payload.sumOfAdjWeights = 0;
     payload.rngState = rng;
 
     TraceRay(SceneBVH, rayFlags, instanceMask, 0, 0, 0, ray, payload);
@@ -169,7 +176,6 @@ void AnyHit(inout RayPayload payload : SV_RayPayload, in Attributes attrib : SV_
     
     // Double check the maths here
     float angleCos = dot(rayDirection, flatNormal);
-    //float weight = rsqrt(1 - angleCos * angleCos);
     float weight = 1 / abs(angleCos);
     
     // Use reservoir sampling to determine whether to use this hit
@@ -185,10 +191,8 @@ void AnyHit(inout RayPayload payload : SV_RayPayload, in Attributes attrib : SV_
         payload.geometryIndex = geometryIndex;
         payload.primitiveIndex = primitiveIndex;
         payload.barycentrics = rayBarycentrics;
+        payload.sampleWeight = weight;
     }
-    
-    // Sum of weights with d-squared term required for scaling later
-    payload.sumOfAdjWeights += weight * pow(RayTCurrent(), 2);
 }
 
 [shader("closesthit")]

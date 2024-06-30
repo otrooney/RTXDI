@@ -835,7 +835,7 @@ void UserInterface::SamplingSettings()
         {
             m_ui.resetAccumulation |= ImGui::SliderInt("Samples per frame", (int*)&m_ui.lightingSettings.gsgiParams.samplesPerFrame, 1, 131072);
             m_ui.resetAccumulation |= ImGui::SliderInt("Sample lifespan (frames)", (int*)&m_ui.lightingSettings.gsgiParams.sampleLifespan, 1, 60);
-            m_ui.resetAccumulation |= ImGui::SliderFloat("Scaling factor", &m_ui.lightingSettings.gsgiParams.scalingFactor, 0.001f, 1.0f);
+            m_ui.resetAccumulation |= ImGui::SliderFloat("Scaling factor", &m_ui.lightingSettings.gsgiParams.scalingFactor, 0.001f, 100.0f);
             m_ui.resetAccumulation |= ImGui::SliderFloat("Boiling filter", &m_ui.lightingSettings.gsgiParams.boilingFilter, 0.001f, 0.2f);
             m_ui.resetAccumulation |= ImGui::Combo("Light type", (int*)&m_ui.lightingSettings.gsgiParams.virtualLightType,"Point\0Disk\0Spot\0");
             m_ui.resetAccumulation |= ImGui::SliderFloat("Light size", &m_ui.lightingSettings.gsgiParams.lightSize, 0.001f, 1.0f);
