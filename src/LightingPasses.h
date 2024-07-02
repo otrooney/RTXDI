@@ -84,6 +84,7 @@ private:
     RayTracingPass m_GIFusedResamplingPass;
     RayTracingPass m_GIFinalShadingPass;
     RayTracingPass m_GSGISampleGeometryPass;
+    RayTracingPass m_GSGIInitialSamplesPass;
     RayTracingPass m_GSGICreateLightsPass;
     nvrhi::BindingLayoutHandle m_BindingLayout;
     nvrhi::BindingLayoutHandle m_BindlessLayout;
@@ -94,6 +95,7 @@ private:
     nvrhi::BufferHandle m_SecondarySurfaceBuffer;
     nvrhi::BufferHandle m_GSGIGBuffer;
     nvrhi::BufferHandle m_GIReservoirBuffer;
+    nvrhi::BufferHandle m_GSGIReservoirBuffer;
 
     dm::uint2 m_EnvironmentPdfTextureSize;
     dm::uint2 m_LocalLightPdfTextureSize;

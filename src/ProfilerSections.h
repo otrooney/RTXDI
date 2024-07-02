@@ -33,6 +33,7 @@ struct ProfilerSection
         GIFusedResampling,
         GIFinalShading,
         GSGISampleGeometry,
+        GSGIInitialSamples,
         GSGICreateLights,
         Gradients,
         Denoising,

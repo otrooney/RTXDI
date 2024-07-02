@@ -63,32 +63,17 @@ void RayGen()
 #if !USE_RAY_QUERY
     uint2 GlobalIndex = DispatchRaysIndex().xy;
 #endif
-    const RTXDI_RuntimeParameters params = g_Const.runtimeParams;
     
-    RAB_RandomSamplerState rng = RAB_InitRandomSampler(GlobalIndex, 1);
-    RAB_RandomSamplerState tileRng = RAB_InitRandomSampler(GlobalIndex / RTXDI_TILE_SIZE_IN_PIXELS, 1);
-
     GSGIGBufferData gsgiGBufferData = GetGSGIGBufferData(GlobalIndex);
     RAB_Surface surface = ConvertGSGIGBufferToSurface(gsgiGBufferData);
+    
+    uint bufferIndex = globalIndexToGBufferPointer(GlobalIndex);
+    RTXDI_DIReservoir reservoir = RTXDI_UnpackDIReservoir(u_GSGIReservoirs[bufferIndex]);
+    
+    RAB_LightInfo sourceLightInfo = RAB_LoadLightInfo(RTXDI_GetDIReservoirLightIndex(reservoir), false);
 
-    RTXDI_SampleParameters sampleParams = RTXDI_InitSampleParameters(
-        g_Const.restirDI.initialSamplingParams.numPrimaryLocalLightSamples,
-        g_Const.restirDI.initialSamplingParams.numPrimaryInfiniteLightSamples,
-        g_Const.restirDI.initialSamplingParams.numPrimaryEnvironmentSamples,
-        g_Const.restirDI.initialSamplingParams.numPrimaryBrdfSamples,
-        g_Const.restirDI.initialSamplingParams.brdfCutoff,
-        0.001f);
-
-    RAB_LightSample lightSample;
-    RTXDI_DIReservoir reservoir = RTXDI_SampleLightsForSurface(rng, tileRng, surface,
-        sampleParams, g_Const.lightBufferParams, g_Const.restirDI.initialSamplingParams.localLightSamplingMode,
-#ifdef RTXDI_ENABLE_PRESAMPLING
-        g_Const.localLightsRISBufferSegmentParams, g_Const.environmentLightRISBufferSegmentParams,
-#if RTXDI_REGIR_MODE != RTXDI_REGIR_MODE_DISABLED
-        g_Const.regir,
-#endif
-#endif
-        lightSample);
+    RAB_LightSample lightSample = RAB_SamplePolymorphicLight(sourceLightInfo,
+            surface, RTXDI_GetDIReservoirSampleUV(reservoir));
     
     float3 visibility = GetFinalVisibility(SceneBVH, surface, lightSample.position);
 

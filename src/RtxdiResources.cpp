@@ -187,6 +187,15 @@ RtxdiResources::RtxdiResources(
     giReservoirBufferDesc.debugName = "GIReservoirBuffer";
     giReservoirBufferDesc.canHaveUAVs = true;
     GIReservoirBuffer = device->createBuffer(giReservoirBufferDesc);
+
+    nvrhi::BufferDesc GSGIReservoirBufferDesc;
+    GSGIReservoirBufferDesc.byteSize = sizeof(RTXDI_PackedDIReservoir) * GSGIsamplesPerFrame;
+    GSGIReservoirBufferDesc.structStride = sizeof(RTXDI_PackedDIReservoir);
+    GSGIReservoirBufferDesc.initialState = nvrhi::ResourceStates::UnorderedAccess;
+    GSGIReservoirBufferDesc.keepInitialState = true;
+    GSGIReservoirBufferDesc.debugName = "GSGIReservoirBuffer";
+    GSGIReservoirBufferDesc.canHaveUAVs = true;
+    GSGIReservoirBuffer = device->createBuffer(GSGIReservoirBufferDesc);
 }
 
 void RtxdiResources::InitializeNeighborOffsets(nvrhi::ICommandList* commandList, uint32_t neighborOffsetCount)

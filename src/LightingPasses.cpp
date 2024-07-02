@@ -148,9 +148,8 @@ LightingPasses::LightingPasses(
         nvrhi::BindingLayoutItem::TypedBuffer_UAV(12),
         nvrhi::BindingLayoutItem::StructuredBuffer_UAV(13),
         nvrhi::BindingLayoutItem::StructuredBuffer_UAV(14),
-        nvrhi::BindingLayoutItem::Texture_UAV(15),
+        nvrhi::BindingLayoutItem::StructuredBuffer_UAV(15),
         nvrhi::BindingLayoutItem::StructuredBuffer_UAV(16),
-        nvrhi::BindingLayoutItem::Texture_UAV(17),
 
         nvrhi::BindingLayoutItem::VolatileConstantBuffer(0),
         nvrhi::BindingLayoutItem::PushConstants(1, sizeof(PerPassConstants)),
@@ -218,6 +217,7 @@ void LightingPasses::CreateBindingSet(
             nvrhi::BindingSetItem::TypedBuffer_UAV(12, m_Profiler->GetRayCountBuffer()),
             nvrhi::BindingSetItem::StructuredBuffer_UAV(13, resources.SecondaryGBuffer),
             nvrhi::BindingSetItem::StructuredBuffer_UAV(14, resources.GSGIGBuffer),
+            nvrhi::BindingSetItem::StructuredBuffer_UAV(15, resources.GSGIReservoirBuffer),
             nvrhi::BindingSetItem::StructuredBuffer_UAV(16, resources.VirtualLightBuffer),
 
             nvrhi::BindingSetItem::ConstantBuffer(0, m_ConstantBuffer),
@@ -245,6 +245,7 @@ void LightingPasses::CreateBindingSet(
     m_LightReservoirBuffer = resources.LightReservoirBuffer;
     m_SecondarySurfaceBuffer = resources.SecondaryGBuffer;
     m_GSGIGBuffer = resources.GSGIGBuffer;
+    m_GSGIReservoirBuffer = resources.GSGIReservoirBuffer;
     m_GIReservoirBuffer = resources.GIReservoirBuffer;
 }
 
@@ -331,6 +332,7 @@ void LightingPasses::createReGIRPipeline(const rtxdi::ReGIRStaticParameters& reg
 void LightingPasses::createGSGIPipelines(const std::vector<donut::engine::ShaderMacro>& regirMacros, bool useRayQuery)
 {
     m_GSGISampleGeometryPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGISampleGeometry.hlsl", {}, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
+    m_GSGIInitialSamplesPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGIInitialSamples.hlsl", regirMacros, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
     m_GSGICreateLightsPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGICreateLights.hlsl", regirMacros, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
 }
 
@@ -567,7 +569,7 @@ void LightingPasses::GenerateGSGILights(
 
     ExecuteRayTracingPass(commandList, m_GSGISampleGeometryPass, localSettings.enableRayCounts, "GSGISampleGeometry", dispatchSize, ProfilerSection::GSGISampleGeometry);
 
-    // nvrhi::utils::BufferUavBarrier(commandList, m_SecondarySurfaceBuffer);
+    ExecuteRayTracingPass(commandList, m_GSGIInitialSamplesPass, localSettings.enableRayCounts, "GSGIInitialSamples", dispatchSize, ProfilerSection::GSGIInitialSamples);
 
     ExecuteRayTracingPass(commandList, m_GSGICreateLightsPass, localSettings.enableRayCounts, "GSGICreateLights", dispatchSize, ProfilerSection::GSGICreateLights);
 }
