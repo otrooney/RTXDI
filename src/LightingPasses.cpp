@@ -81,6 +81,7 @@ GSGI_Parameters getDefaultGSGIParams()
     params.samplesPerFrame = 32768;
     params.sampleLifespan = 30;
     params.sampleOriginOffset = 1.0f;
+    params.resamplingMode = None;
     params.scalingFactor = 300.0f;
     params.boilingFilter = 0.1f;
     params.virtualLightType = Point;
@@ -333,7 +334,8 @@ void LightingPasses::createGSGIPipelines(const std::vector<donut::engine::Shader
 {
     m_GSGISampleGeometryPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGISampleGeometry.hlsl", {}, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
     m_GSGIInitialSamplesPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGIInitialSamples.hlsl", regirMacros, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
-    m_GSGICreateLightsPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGICreateLights.hlsl", regirMacros, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
+    m_GSGIReGIRResamplingPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGIReGIRResampling.hlsl", {}, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
+    m_GSGICreateLightsPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGICreateLights.hlsl", {}, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
 }
 
 void LightingPasses::createReSTIRDIPipelines(const std::vector<donut::engine::ShaderMacro>& regirMacros, bool useRayQuery)
@@ -570,6 +572,11 @@ void LightingPasses::GenerateGSGILights(
     ExecuteRayTracingPass(commandList, m_GSGISampleGeometryPass, localSettings.enableRayCounts, "GSGISampleGeometry", dispatchSize, ProfilerSection::GSGISampleGeometry);
 
     ExecuteRayTracingPass(commandList, m_GSGIInitialSamplesPass, localSettings.enableRayCounts, "GSGIInitialSamples", dispatchSize, ProfilerSection::GSGIInitialSamples);
+
+    if (localSettings.gsgiParams.resamplingMode == ReGIR)
+    {
+        ExecuteRayTracingPass(commandList, m_GSGIReGIRResamplingPass, localSettings.enableRayCounts, "GSGIReGIRResampling", dispatchSize, ProfilerSection::GSGIReGIRResampling);
+    }
 
     ExecuteRayTracingPass(commandList, m_GSGICreateLightsPass, localSettings.enableRayCounts, "GSGICreateLights", dispatchSize, ProfilerSection::GSGICreateLights);
 }

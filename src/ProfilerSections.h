@@ -34,6 +34,7 @@ struct ProfilerSection
         GIFinalShading,
         GSGISampleGeometry,
         GSGIInitialSamples,
+        GSGIReGIRResampling,
         GSGICreateLights,
         Gradients,
         Denoising,

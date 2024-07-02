@@ -11,11 +11,18 @@ enum VirtualLightType
     Spot
 };
 
+enum GSGIResamplingMode
+{
+    None,
+    ReGIR
+};
+
 struct GSGI_Parameters
 {
     uint32_t samplesPerFrame;
     uint32_t sampleLifespan;
     float sampleOriginOffset;
+    GSGIResamplingMode resamplingMode;
     float scalingFactor;
     float boilingFilter;
     VirtualLightType virtualLightType;
