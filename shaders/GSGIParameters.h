@@ -15,6 +15,7 @@ struct GSGI_Parameters
 {
     uint32_t samplesPerFrame;
     uint32_t sampleLifespan;
+    float sampleOriginOffset;
     float scalingFactor;
     float boilingFilter;
     VirtualLightType virtualLightType;

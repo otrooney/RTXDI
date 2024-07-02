@@ -112,12 +112,18 @@ void RayGen()
     //float dirZ = cos(phi);
     //float3 direction = float3(dirX, dirY, dirZ);
     
+    // Randomly offset ray origin to reduce noise from acute angles
+    float3 origin = g_Const.view.cameraDirectionOrPosition.xyz;
+    origin.x = origin.x + (sampleUniformRng(rng) * g_Const.gsgi.sampleOriginOffset) - (g_Const.gsgi.sampleOriginOffset / 2);
+    origin.y = origin.y + (sampleUniformRng(rng) * g_Const.gsgi.sampleOriginOffset) - (g_Const.gsgi.sampleOriginOffset / 2);
+    origin.z = origin.z + (sampleUniformRng(rng) * g_Const.gsgi.sampleOriginOffset) - (g_Const.gsgi.sampleOriginOffset / 2);
+    
     float2 rands = float2(sampleUniformRng(rng), sampleUniformRng(rng));
     float solidAnglePdf;
     float3 direction = sampleSphere(rands, solidAnglePdf);
     
     RayDesc ray;
-    ray.Origin = g_Const.view.cameraDirectionOrPosition.xyz;
+    ray.Origin = origin;
     ray.Direction = direction;
     ray.TMin = 0.0f;
     ray.TMax = 1e+30f;
@@ -135,7 +141,7 @@ void RayGen()
     
     float rDensity = (4 * c_pi) / (g_Const.gsgi.samplesPerFrame * g_Const.gsgi.sampleLifespan);
     
-    writeToGBuffer(g_Const.view.cameraDirectionOrPosition.xyz, direction, payload, GlobalIndex, rDensity);
+    writeToGBuffer(origin, direction, payload, GlobalIndex, rDensity);
 }
 #endif
 
