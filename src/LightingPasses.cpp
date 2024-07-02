@@ -217,9 +217,7 @@ void LightingPasses::CreateBindingSet(
             nvrhi::BindingSetItem::TypedBuffer_UAV(12, m_Profiler->GetRayCountBuffer()),
             nvrhi::BindingSetItem::StructuredBuffer_UAV(13, resources.SecondaryGBuffer),
             nvrhi::BindingSetItem::StructuredBuffer_UAV(14, resources.GSGIGBuffer),
-            nvrhi::BindingSetItem::Texture_UAV(15, renderTargets.GSGIGBufferAlbedo),
             nvrhi::BindingSetItem::StructuredBuffer_UAV(16, resources.VirtualLightBuffer),
-            nvrhi::BindingSetItem::Texture_UAV(17, renderTargets.GSGIGBufferNormals),
 
             nvrhi::BindingSetItem::ConstantBuffer(0, m_ConstantBuffer),
             nvrhi::BindingSetItem::PushConstants(1, sizeof(PerPassConstants)),

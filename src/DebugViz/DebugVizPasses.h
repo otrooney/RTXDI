@@ -31,8 +31,6 @@ public:
     void RenderUnpackedGeoNormals(nvrhi::ICommandList* commandList, const donut::engine::IView& view);
     void RenderUnpackedDiffuseAlbeo(nvrhi::ICommandList* commandList, const donut::engine::IView& view);
     void RenderUnpackedSpecularRoughness(nvrhi::ICommandList* commandList, const donut::engine::IView& view);
-    void RenderUnpackedGSGIDiffuseAlbeo(nvrhi::ICommandList* commandList, const donut::engine::IView& view);
-    void RenderUnpackedGSGINormals(nvrhi::ICommandList* commandList, const donut::engine::IView& view);
 
     void NextFrame();
 
@@ -41,7 +39,5 @@ private:
     std::unique_ptr<PackedDataVizPass> m_GBufferGeoNormalsViz;
     std::unique_ptr<PackedDataVizPass> m_GBufferDiffuseAlbedoViz;
     std::unique_ptr<PackedDataVizPass> m_GBufferSpecularRoughnessViz;
-    std::unique_ptr<PackedDataVizPass> m_GSGIGBufferAlbedoViz;
-    std::unique_ptr<PackedDataVizPass> m_GSGIGBufferNormalViz;
 };
 

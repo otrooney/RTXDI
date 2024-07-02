@@ -151,24 +151,4 @@ void RayGen()
     // Write to virtual light buffer
     uint gbufferIndex = globalIndexToGBufferPointer(GlobalIndex);
     u_VirtualLightDataBuffer[gbufferIndex] = lightInfo;
-    
-    // Write radiance to debug visualisation buffer (temporary)
-    uint2 debugVisIndex = globalIndexToDebugVisPointer(GlobalIndex, 96);
-    t_GSGIGBufferDiffuseAlbedo[debugVisIndex] = Pack_R11G11B10_UFLOAT(radiance);
-    
-    // Write world position to vis buffer (temporary)
-    uint2 worldPosDebugVisIndex = globalIndexToDebugVisPointer(GlobalIndex, 192);
-    t_GSGIGBufferDiffuseAlbedo[worldPosDebugVisIndex] = Pack_R11G11B10_UFLOAT(gsgiGBufferData.worldPos);
-    
-    // Write sum of weights to vis buffer (temporary)
-    uint2 sumOfWeightsDebugVisIndex = globalIndexToDebugVisPointer(GlobalIndex, 288);
-    t_GSGIGBufferDiffuseAlbedo[sumOfWeightsDebugVisIndex] = Pack_R11G11B10_UFLOAT(float3(gsgiGBufferData.sumOfWeights, 0.0f, 0.0f));
-    
-    // Write normal to vis buffer (temporary)
-    uint2 normalDebugVisIndex = globalIndexToDebugVisPointer(GlobalIndex, 96);
-    t_GSGIGBufferNormals[normalDebugVisIndex] = ndirToOctUnorm32(gsgiGBufferData.normal);
-    
-    // Write geonormal to vis buffer (temporary)
-    uint2 geonormalDebugVisIndex = globalIndexToDebugVisPointer(GlobalIndex, 192);
-    t_GSGIGBufferNormals[geonormalDebugVisIndex] = ndirToOctUnorm32(gsgiGBufferData.geoNormal);
 }

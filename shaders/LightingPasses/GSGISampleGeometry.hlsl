@@ -18,8 +18,6 @@ SamplerState s_MaterialSampler : register(s0);
 RWBuffer<uint> u_RayCountBuffer : register(u12);
 RWStructuredBuffer<GSGIGBufferData> u_GSGIGBuffer : register(u14);
 
-// For debug vis
-RWTexture2D<uint> t_GSGIGBufferDiffuseAlbedo : register(u15);
 
 struct RayPayload
 {
@@ -88,10 +86,6 @@ void writeToGBuffer(
     uint gbufferIndex = globalIndexToGBufferPointer(GlobalIndex);
     u_GSGIGBuffer[gbufferIndex] = gsgiGBufferData;
     
-    // Write albedo to debug visualisation buffer (temporary)
-    uint2 debugVisIndex = globalIndexToDebugVisPointer(GlobalIndex, 0);
-    t_GSGIGBufferDiffuseAlbedo[debugVisIndex] = gsgiGBufferData.diffuseAlbedo;
-
 }
 
 #if USE_RAY_QUERY

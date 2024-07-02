@@ -964,8 +964,6 @@ void UserInterface::PostProcessSettings()
             "DiffuseConfidence\0"
             "SpecularConfidence\0"
             "MotionVectors\0"
-            "GSGIGBufferAlbedo\0"
-            "GSGIGBufferNormals\0"
             "LocalLightPdf\0"
         );
         ImGui::PopItemWidth();
