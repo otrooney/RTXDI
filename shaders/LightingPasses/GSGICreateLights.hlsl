@@ -1,4 +1,6 @@
 
+#pragma pack_matrix(row_major)
+
 #include "RtxdiApplicationBridge.hlsli"
 #include "../PolymorphicLight.hlsli"
 
@@ -99,12 +101,12 @@ void RayGen()
     
     float luminance = calcLuminance(diffuse * surface.diffuseAlbedo);
     
-    // Account for scaling factor
+    // Account for scaling factor, sample density, etc.
     luminance *= g_Const.gsgi.scalingFactor;
-    luminance = min(luminance, g_Const.gsgi.boilingFilter);
+    // luminance = min(luminance, g_Const.gsgi.boilingFilter);
     
-    luminance *= gsgiGBufferData.rSampleDensity * gsgiGBufferData.sumOfWeights / gsgiGBufferData.sampleWeight;
-    float3 radiance = surface.diffuseAlbedo * luminance;
+    luminance *= gsgiGBufferData.rSampleDensity * gsgiGBufferData.sumOfWeights;
+    float3 radiance = surface.diffuseAlbedo * luminance * 0.01;
     
     PolymorphicLightInfo lightInfo = (PolymorphicLightInfo) 0;
     

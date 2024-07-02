@@ -1,4 +1,5 @@
 
+#pragma pack_matrix(row_major)
 
 #include "../HelperFunctions.hlsli"
 #include "../SceneGeometry.hlsli"
@@ -27,7 +28,6 @@ struct RayPayload
     uint geometryIndex;
     uint primitiveIndex;
     float2 barycentrics;
-    float sampleWeight;
     float sumOfWeights;
     RandomSamplerState rngState;
 };
@@ -49,7 +49,8 @@ uint2 globalIndexToDebugVisPointer(uint2 GlobalIndex, uint offset)
 }
 
 void writeToGBuffer(
-    RayDesc ray,
+    float3 origin,
+    float3 direction,
     RayPayload payload,
     uint2 GlobalIndex,
     float rDensity
@@ -63,14 +64,13 @@ void writeToGBuffer(
             GeomAttr_All, t_InstanceData, t_GeometryData, t_MaterialConstants);
             
         MaterialSample ms = sampleGeometryMaterial(gs, 0, 0, 0, MatAttr_BaseColor | MatAttr_Normal, s_MaterialSampler);
-
-        gsgiGBufferData.worldPos = ray.Origin + ray.Direction * payload.committedRayT;
+        
+        gsgiGBufferData.worldPos = origin + direction * payload.committedRayT;
         gsgiGBufferData.diffuseAlbedo = Pack_R11G11B10_UFLOAT(ms.diffuseAlbedo);
         gsgiGBufferData.normal = ms.shadingNormal;
-        gsgiGBufferData.geoNormal = gs.geometryNormal;
+        gsgiGBufferData.geoNormal = gs.flatNormal;
         gsgiGBufferData.distance = payload.committedRayT;
         gsgiGBufferData.rSampleDensity = rDensity;
-        gsgiGBufferData.sampleWeight = payload.sampleWeight;
         gsgiGBufferData.sumOfWeights = payload.sumOfWeights;
     }
     else
@@ -81,7 +81,6 @@ void writeToGBuffer(
         gsgiGBufferData.geoNormal = float3(0, 0, 0);
         gsgiGBufferData.distance = 0.0f;
         gsgiGBufferData.rSampleDensity = 1.0f;
-        gsgiGBufferData.sampleWeight = 0.0f;
         gsgiGBufferData.sumOfWeights = 0.0f;
     }
     
@@ -134,7 +133,6 @@ void RayGen()
     payload.instanceID = ~0u;
     payload.primitiveIndex = 0;
     payload.barycentrics = 0;
-    payload.sampleWeight = 0;
     payload.sumOfWeights = 0;
     payload.rngState = rng;
 
@@ -143,8 +141,7 @@ void RayGen()
     
     float rDensity = (4 * c_pi) / (g_Const.gsgi.samplesPerFrame * g_Const.gsgi.sampleLifespan);
     
-    writeToGBuffer(ray, payload, GlobalIndex, rDensity);
-    
+    writeToGBuffer(g_Const.view.cameraDirectionOrPosition.xyz, direction, payload, GlobalIndex, rDensity);
 }
 #endif
 
@@ -191,7 +188,6 @@ void AnyHit(inout RayPayload payload : SV_RayPayload, in Attributes attrib : SV_
         payload.geometryIndex = geometryIndex;
         payload.primitiveIndex = primitiveIndex;
         payload.barycentrics = rayBarycentrics;
-        payload.sampleWeight = weight;
     }
 }
 

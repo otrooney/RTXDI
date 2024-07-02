@@ -280,7 +280,6 @@ struct GSGIGBufferData
     float3 geoNormal;
 
     float rSampleDensity;
-    float sampleWeight;
     float sumOfWeights;
 };
 
