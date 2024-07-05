@@ -71,6 +71,8 @@ private:
     ComputePass m_PresampleLightsPass;
     ComputePass m_PresampleEnvironmentMapPass;
     ComputePass m_PresampleReGIR;
+    ComputePass m_GSGIReGIRZeroingPass;
+    ComputePass m_GSGIReGIRBuildingPass;
     RayTracingPass m_GenerateInitialSamplesPass;
     RayTracingPass m_TemporalResamplingPass;
     RayTracingPass m_SpatialResamplingPass;
@@ -97,6 +99,7 @@ private:
     nvrhi::BufferHandle m_GSGIGBuffer;
     nvrhi::BufferHandle m_GIReservoirBuffer;
     nvrhi::BufferHandle m_GSGIReservoirBuffer;
+    nvrhi::BufferHandle m_GSGIGridBuffer;
 
     dm::uint2 m_EnvironmentPdfTextureSize;
     dm::uint2 m_LocalLightPdfTextureSize;
@@ -167,6 +170,7 @@ public:
     void GenerateGSGILights(
         nvrhi::ICommandList* commandList,
         rtxdi::ReSTIRDIContext& context,
+        rtxdi::ImportanceSamplingContext& isContext,
         const donut::engine::IView& view,
         const RenderSettings& localSettings);
 

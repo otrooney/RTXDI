@@ -151,6 +151,7 @@ LightingPasses::LightingPasses(
         nvrhi::BindingLayoutItem::StructuredBuffer_UAV(14),
         nvrhi::BindingLayoutItem::StructuredBuffer_UAV(15),
         nvrhi::BindingLayoutItem::StructuredBuffer_UAV(16),
+        nvrhi::BindingLayoutItem::TypedBuffer_UAV(17),
 
         nvrhi::BindingLayoutItem::VolatileConstantBuffer(0),
         nvrhi::BindingLayoutItem::PushConstants(1, sizeof(PerPassConstants)),
@@ -220,6 +221,7 @@ void LightingPasses::CreateBindingSet(
             nvrhi::BindingSetItem::StructuredBuffer_UAV(14, resources.GSGIGBuffer),
             nvrhi::BindingSetItem::StructuredBuffer_UAV(15, resources.GSGIReservoirBuffer),
             nvrhi::BindingSetItem::StructuredBuffer_UAV(16, resources.VirtualLightBuffer),
+            nvrhi::BindingSetItem::TypedBuffer_UAV(17, resources.GSGIGridBuffer),
 
             nvrhi::BindingSetItem::ConstantBuffer(0, m_ConstantBuffer),
             nvrhi::BindingSetItem::PushConstants(1, sizeof(PerPassConstants)),
@@ -248,6 +250,7 @@ void LightingPasses::CreateBindingSet(
     m_GSGIGBuffer = resources.GSGIGBuffer;
     m_GSGIReservoirBuffer = resources.GSGIReservoirBuffer;
     m_GIReservoirBuffer = resources.GIReservoirBuffer;
+    m_GSGIGridBuffer = resources.GSGIGridBuffer;
 }
 
 void LightingPasses::CreateComputePass(ComputePass& pass, const char* shaderName, const std::vector<donut::engine::ShaderMacro>& macros)
@@ -334,7 +337,9 @@ void LightingPasses::createGSGIPipelines(const std::vector<donut::engine::Shader
 {
     m_GSGISampleGeometryPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGISampleGeometry.hlsl", {}, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
     m_GSGIInitialSamplesPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGIInitialSamples.hlsl", regirMacros, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
-    m_GSGIReGIRResamplingPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGIReGIRResampling.hlsl", {}, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
+    CreateComputePass(m_GSGIReGIRZeroingPass, "app/LightingPasses/GSGIReGIRZeroing.hlsl", regirMacros);
+    CreateComputePass(m_GSGIReGIRBuildingPass, "app/LightingPasses/GSGIReGIRBuilding.hlsl", regirMacros);
+    m_GSGIReGIRResamplingPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGIReGIRResampling.hlsl", regirMacros, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
     m_GSGICreateLightsPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGICreateLights.hlsl", {}, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
 }
 
@@ -557,10 +562,12 @@ void LightingPasses::PrepareForLightSampling(
 void LightingPasses::GenerateGSGILights(
     nvrhi::ICommandList* commandList,
     rtxdi::ReSTIRDIContext& context,
+    rtxdi::ImportanceSamplingContext& isContext,
     const donut::engine::IView& view,
     const RenderSettings& localSettings)
 {
-    // Do stuff here
+    rtxdi::ReGIRContext& regirContext = isContext.getReGIRContext();
+
     uint32_t lightBufferSize = localSettings.gsgiParams.sampleLifespan * localSettings.gsgiParams.samplesPerFrame;
     uint32_t lightBufferOffset = (context.getFrameIndex() % localSettings.gsgiParams.sampleLifespan) * localSettings.gsgiParams.samplesPerFrame;
 
@@ -575,6 +582,21 @@ void LightingPasses::GenerateGSGILights(
 
     if (localSettings.gsgiParams.resamplingMode == ReGIR)
     {
+        dm::int2 worldGridDispatchSize = {
+            dm::div_ceil(regirContext.getReGIRLightSlotCount(), 256),
+            1
+        };
+
+        ExecuteComputePass(commandList, m_GSGIReGIRZeroingPass, "GSGIReGIRZeroingPass", worldGridDispatchSize, ProfilerSection::GSGIReGIRResampling);
+        nvrhi::utils::BufferUavBarrier(commandList, m_GSGIGridBuffer);
+
+        dm::int2 gridBuildingDispatchSize = {
+            dm::div_ceil(localSettings.gsgiParams.samplesPerFrame, 256),
+            1
+        };
+
+        ExecuteComputePass(commandList, m_GSGIReGIRBuildingPass, "GSGIReGIRBuildingPass", gridBuildingDispatchSize, ProfilerSection::GSGIReGIRResampling);
+        nvrhi::utils::BufferUavBarrier(commandList, m_GSGIGridBuffer);
         ExecuteRayTracingPass(commandList, m_GSGIReGIRResamplingPass, localSettings.enableRayCounts, "GSGIReGIRResampling", dispatchSize, ProfilerSection::GSGIReGIRResampling);
     }
 

@@ -83,6 +83,7 @@ RWStructuredBuffer<SecondaryGBufferData> u_SecondaryGBuffer : register(u13);
 RWStructuredBuffer<GSGIGBufferData> u_GSGIGBuffer : register(u14);
 RWStructuredBuffer<RTXDI_PackedDIReservoir> u_GSGIReservoirs : register(u15);
 RWStructuredBuffer<PolymorphicLightInfo> u_VirtualLightDataBuffer : register(u16);
+RWBuffer<int> u_GSGIGridBuffer : register(u17);
 
 // Other
 ConstantBuffer<ResamplingConstants> g_Const : register(b0);

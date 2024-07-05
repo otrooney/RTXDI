@@ -1257,6 +1257,7 @@ public:
             // Do GSGI stuff here
             m_LightingPasses->GenerateGSGILights(m_CommandList,
                 restirDIContext,
+                *m_isContext,
                 m_View,
                 lightingSettings);
         }

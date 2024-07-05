@@ -47,6 +47,7 @@ public:
     nvrhi::TextureHandle LocalLightPdfTexture;
     nvrhi::BufferHandle GIReservoirBuffer;
     nvrhi::BufferHandle GSGIReservoirBuffer;
+    nvrhi::BufferHandle GSGIGridBuffer;
 
     RtxdiResources(
         nvrhi::IDevice* device, 

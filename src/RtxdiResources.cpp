@@ -196,6 +196,16 @@ RtxdiResources::RtxdiResources(
     GSGIReservoirBufferDesc.debugName = "GSGIReservoirBuffer";
     GSGIReservoirBufferDesc.canHaveUAVs = true;
     GSGIReservoirBuffer = device->createBuffer(GSGIReservoirBufferDesc);
+
+    nvrhi::BufferDesc GSGIGridBufferDesc;
+    GSGIGridBufferDesc.byteSize = sizeof(int32_t) * std::max(risBufferSegmentAllocator.getTotalSizeInElements(), 1u);
+    GSGIGridBufferDesc.format = nvrhi::Format::R32_SINT;
+    GSGIGridBufferDesc.canHaveTypedViews = true;
+    GSGIGridBufferDesc.initialState = nvrhi::ResourceStates::ShaderResource;
+    GSGIGridBufferDesc.keepInitialState = true;
+    GSGIGridBufferDesc.debugName = "GSGIGridBuffer";
+    GSGIGridBufferDesc.canHaveUAVs = true;
+    GSGIGridBuffer = device->createBuffer(GSGIGridBufferDesc);
 }
 
 void RtxdiResources::InitializeNeighborOffsets(nvrhi::ICommandList* commandList, uint32_t neighborOffsetCount)

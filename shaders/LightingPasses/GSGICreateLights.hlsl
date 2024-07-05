@@ -58,8 +58,6 @@ void main(uint2 GlobalIndex : SV_DispatchThreadID)
 void RayGen()
 #endif
 {
-    // Largely duplicated from DIGenerateInitialSamples.hlsl, but we go straight to final visibility
-    // testing, as we're not doing resampling (yet)
 #if !USE_RAY_QUERY
     uint2 GlobalIndex = DispatchRaysIndex().xy;
 #endif
