@@ -833,8 +833,8 @@ void UserInterface::SamplingSettings()
 
         if (m_ui.indirectLightingMode == IndirectLightingMode::GSGI)
         {
-            m_ui.resetAccumulation |= ImGui::SliderInt("Samples per frame", (int*)&m_ui.lightingSettings.gsgiParams.samplesPerFrame, 1, 131072);
-            m_ui.resetAccumulation |= ImGui::SliderInt("Sample lifespan (frames)", (int*)&m_ui.lightingSettings.gsgiParams.sampleLifespan, 1, 60);
+            m_ui.resetAccumulation |= ImGui::SliderInt("Samples per frame", (int*)&m_ui.lightingSettings.gsgiParams.samplesPerFrame, 1, 262144);
+            m_ui.resetAccumulation |= ImGui::SliderInt("Sample lifespan (frames)", (int*)&m_ui.lightingSettings.gsgiParams.sampleLifespan, 1, 30);
             m_ui.resetAccumulation |= ImGui::SliderFloat("Sample origin offset", &m_ui.lightingSettings.gsgiParams.sampleOriginOffset, 0.0f, 4.0f);
             m_ui.resetAccumulation |= ImGui::Combo("Resampling mode", (int*)&m_ui.lightingSettings.gsgiParams.resamplingMode, "None\0ReGIR\0");
             m_ui.resetAccumulation |= ImGui::SliderFloat("Scaling factor", &m_ui.lightingSettings.gsgiParams.scalingFactor, 0.001f, 1000.0f);

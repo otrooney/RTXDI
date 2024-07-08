@@ -30,20 +30,11 @@ struct RayPayload
     RandomSamplerState rngState;
 };
 
+// Duplicated in GSGIUtils.hlsli
 uint globalIndexToGBufferPointer(uint2 GlobalIndex)
 {
     // Dispatch size should be 1 in y dimension
-    uint gbufferIndex = GlobalIndex.x;
-    return gbufferIndex;
-}
-
-uint2 globalIndexToDebugVisPointer(uint2 GlobalIndex, uint offset)
-{
-    // Represent as 64px wide 2D for visibility, offset on x axis
-    uint2 debugBufferIndex;
-    debugBufferIndex.x = (GlobalIndex.x % 64) + 512 + offset;
-    debugBufferIndex.y = GlobalIndex.x / 64;
-    return debugBufferIndex;
+    return GlobalIndex.x;
 }
 
 void writeToGBuffer(

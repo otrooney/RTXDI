@@ -1,40 +1,13 @@
 
 #pragma pack_matrix(row_major)
 
+#include "GSGIUtils.hlsli"
 #include "RtxdiApplicationBridge.hlsli"
 
 #include <rtxdi/InitialSamplingFunctions.hlsli>
 #include <rtxdi/DIResamplingFunctions.hlsli>
 
 #include <rtxdi/ReGIRSampling.hlsli>
-
-
-// Need to move this into a utils shader file
-uint globalIndexToGBufferPointer(uint2 GlobalIndex)
-{
-    // Dispatch size should be 1 in y dimension
-    uint gbufferIndex = GlobalIndex.x;
-    return gbufferIndex;
-}
-
-RAB_Surface ConvertGSGIGBufferToSurface(GSGIGBufferData gsgiGBufferData)
-{
-    RAB_Surface surface;
-    
-    surface.worldPos = gsgiGBufferData.worldPos;
-    surface.normal = gsgiGBufferData.normal;
-    surface.geoNormal = gsgiGBufferData.geoNormal;
-    surface.diffuseAlbedo = Unpack_R11G11B10_UFLOAT(gsgiGBufferData.diffuseAlbedo);
-    
-    // For now, treat all surfaces as 100% diffuse
-    surface.diffuseProbability = 1.0f;
-    surface.viewDir = -gsgiGBufferData.normal;
-    surface.viewDepth = 1;
-    surface.specularF0 = float3(0, 0, 0);
-    surface.roughness = 0.0f;
-    
-    return surface;
-}
 
 
 #if USE_RAY_QUERY
@@ -70,14 +43,16 @@ void RayGen()
     // These should be configurable
     uint maxAttempts = 100;
     uint numSamples = 8;
-    float normalThreshold = 0;
-    float depthThreshold = 0;
+    float normalThreshold = 0.5f;
+    float depthThreshold = 1.0f;
     
     for (int n = 0; n < maxAttempts; n++)
     {
         int rndIndex = int(sampleUniformRng(rng) * maxValidLights);
         int neighbourBufferIndex = u_GSGIGridBuffer[bufferOffset + rndIndex];
         
+        // If the slot is empty, we set that slot as the maximum and continue. This stochastic bisection
+        // approach makes it much more likely we'll find samples even if most slots are empty.
         if (neighbourBufferIndex == -1)
         {
             maxValidLights = rndIndex;
@@ -86,6 +61,8 @@ void RayGen()
             continue;
         }
         
+        // Don't stream this reservior into itself.
+        // TODO: Avoid streaming the same neighbour multiple times.
         if (neighbourBufferIndex == origBufferIndex)
             continue;
         
