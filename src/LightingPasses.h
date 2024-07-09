@@ -88,6 +88,7 @@ private:
     RayTracingPass m_GSGISampleGeometryPass;
     RayTracingPass m_GSGIInitialSamplesPass;
     RayTracingPass m_GSGIReGIRResamplingPass;
+    RayTracingPass m_GSGIScreenSpaceResamplingPass;
     RayTracingPass m_GSGICreateLightsPass;
     nvrhi::BindingLayoutHandle m_BindingLayout;
     nvrhi::BindingLayoutHandle m_BindlessLayout;

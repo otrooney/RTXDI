@@ -14,7 +14,8 @@ enum VirtualLightType
 enum GSGIResamplingMode
 {
     None,
-    ReGIR
+    ReGIR,
+    ScreenSpace
 };
 
 struct GSGI_Parameters

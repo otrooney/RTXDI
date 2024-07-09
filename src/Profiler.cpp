@@ -38,6 +38,7 @@ static const char* g_SectionNames[ProfilerSection::Count] = {
     "GSGI - Sample Geometry",
     "GSGI - Initial Samples",
     "GSGI - ReGIR Resampling",
+    "GSGI - Screen Space Resampling",
     "GSGI - Create Lights",
     "Gradients",
     "Denoising",
