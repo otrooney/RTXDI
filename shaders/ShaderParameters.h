@@ -273,7 +273,8 @@ struct SecondaryGBufferData
 
 struct GSGIGBufferData
 {
-    float distance;
+    float distanceToRayOrigin;
+    float distanceToCamera;
     float3 worldPos;
 
     uint diffuseAlbedo;         // R11G11B10_UFLOAT

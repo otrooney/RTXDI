@@ -58,7 +58,8 @@ void writeToGBuffer(
         gsgiGBufferData.diffuseAlbedo = Pack_R11G11B10_UFLOAT(ms.diffuseAlbedo);
         gsgiGBufferData.normal = ms.shadingNormal;
         gsgiGBufferData.geoNormal = gs.flatNormal;
-        gsgiGBufferData.distance = payload.committedRayT;
+        gsgiGBufferData.distanceToRayOrigin = payload.committedRayT;
+        gsgiGBufferData.distanceToCamera = distance(g_Const.view.cameraDirectionOrPosition.xyz, gsgiGBufferData.worldPos);
         gsgiGBufferData.rSampleDensity = rDensity;
         gsgiGBufferData.sumOfWeights = payload.sumOfWeights;
     }
@@ -68,7 +69,8 @@ void writeToGBuffer(
         gsgiGBufferData.diffuseAlbedo = 0;
         gsgiGBufferData.normal = float3(0, 0, 0);
         gsgiGBufferData.geoNormal = float3(0, 0, 0);
-        gsgiGBufferData.distance = 0.0f;
+        gsgiGBufferData.distanceToRayOrigin = 0.0f;
+        gsgiGBufferData.distanceToCamera = 0.0f;
         gsgiGBufferData.rSampleDensity = 1.0f;
         gsgiGBufferData.sumOfWeights = 0.0f;
     }

@@ -61,7 +61,7 @@ void RayGen()
     if (g_Const.gsgi.virtualLightType == VirtualLightType::Disk)
     {
         // Represent as a disk light
-        float radius = gsgiGBufferData.distance * g_Const.gsgi.lightSize;
+        float radius = gsgiGBufferData.distanceToRayOrigin * g_Const.gsgi.lightSize;
         radiance /= pow(g_Const.gsgi.lightSize, 2);
 
         packLightColor(radiance, lightInfo);
@@ -73,7 +73,7 @@ void RayGen()
     else if (g_Const.gsgi.virtualLightType == VirtualLightType::Spot)
     {
         // Represent as a spot light
-        float radius = gsgiGBufferData.distance * g_Const.gsgi.lightSize;
+        float radius = gsgiGBufferData.distanceToRayOrigin * g_Const.gsgi.lightSize;
         radiance /= pow(g_Const.gsgi.lightSize, 2);
 
         packLightColor(radiance, lightInfo);
@@ -89,7 +89,7 @@ void RayGen()
     else
     {
         // Represent as a point light
-        radiance *= gsgiGBufferData.distance * gsgiGBufferData.distance;
+        radiance *= gsgiGBufferData.distanceToRayOrigin * gsgiGBufferData.distanceToRayOrigin;
         
         packLightColor(radiance, lightInfo);
         lightInfo.center = gsgiGBufferData.worldPos;

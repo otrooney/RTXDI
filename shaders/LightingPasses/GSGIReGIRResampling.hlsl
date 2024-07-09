@@ -68,7 +68,7 @@ void RayGen()
         
         GSGIGBufferData neighbourGBufferData = u_GSGIGBuffer[neighbourBufferIndex];
         
-        if (!RTXDI_IsValidNeighbor(origGBufferData.geoNormal, neighbourGBufferData.geoNormal, origGBufferData.distance, neighbourGBufferData.distance, normalThreshold, depthThreshold))
+        if (!RTXDI_IsValidNeighbor(origGBufferData.geoNormal, neighbourGBufferData.geoNormal, origGBufferData.distanceToCamera, neighbourGBufferData.distanceToCamera, normalThreshold, depthThreshold))
             continue;
         
         validSamples++;
