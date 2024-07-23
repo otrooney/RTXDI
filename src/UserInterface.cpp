@@ -102,7 +102,7 @@ void UIData::ApplyPreset()
 
     case QualityPreset::Medium:
         enableCheckerboardSampling = false;
-        restirDI.resamplingMode = rtxdi::ReSTIRDI_ResamplingMode::TemporalAndSpatial;
+        restirDI.resamplingMode = rtxdi::ReSTIRDI_ResamplingMode::Spatial;
         restirDI.initialSamplingParams.localLightSamplingMode = ReSTIRDI_LocalLightSamplingMode::ReGIR_RIS;
         restirDI.numLocalLightUniformSamples = 8;
         restirDI.numLocalLightPowerRISSamples = 8;
@@ -833,14 +833,15 @@ void UserInterface::SamplingSettings()
 
         if (m_ui.indirectLightingMode == IndirectLightingMode::GSGI)
         {
-            m_ui.resetAccumulation |= ImGui::SliderInt("Samples per frame", (int*)&m_ui.lightingSettings.gsgiParams.samplesPerFrame, 1, 262144);
-            m_ui.resetAccumulation |= ImGui::SliderInt("Sample lifespan (frames)", (int*)&m_ui.lightingSettings.gsgiParams.sampleLifespan, 1, 30);
+            m_ui.resetAccumulation |= ImGui::SliderInt("Samples per frame", (int*)&m_ui.lightingSettings.gsgiParams.samplesPerFrame, 1, 262144*4);
+            m_ui.resetAccumulation |= ImGui::SliderInt("Sample lifespan (frames)", (int*)&m_ui.lightingSettings.gsgiParams.sampleLifespan, 1, 60);
             m_ui.resetAccumulation |= ImGui::SliderFloat("Sample origin offset", &m_ui.lightingSettings.gsgiParams.sampleOriginOffset, 0.0f, 4.0f);
             m_ui.resetAccumulation |= ImGui::Combo("Resampling mode", (int*)&m_ui.lightingSettings.gsgiParams.resamplingMode, "None\0ReGIR\0ScreenSpace");
             m_ui.resetAccumulation |= ImGui::SliderFloat("Scaling factor", &m_ui.lightingSettings.gsgiParams.scalingFactor, 0.001f, 1000.0f);
             m_ui.resetAccumulation |= ImGui::SliderFloat("Boiling filter", &m_ui.lightingSettings.gsgiParams.boilingFilter, 0.1f, 100.0f);
             m_ui.resetAccumulation |= ImGui::Combo("Light type", (int*)&m_ui.lightingSettings.gsgiParams.virtualLightType,"Point\0Disk\0Spot\0");
             m_ui.resetAccumulation |= ImGui::SliderFloat("Light size", &m_ui.lightingSettings.gsgiParams.lightSize, 0.001f, 1.0f);
+            m_ui.resetAccumulation |= ImGui::Checkbox("Lock lights", (bool*)&m_ui.lightingSettings.gsgiParams.lockLights);
         }
 
         ImGui::TreePop();

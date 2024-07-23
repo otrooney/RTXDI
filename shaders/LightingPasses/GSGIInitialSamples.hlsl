@@ -55,7 +55,7 @@ void RayGen()
         lightSample);
     
     // Check conservative visibility
-    if (RTXDI_IsValidDIReservoir(reservoir))
+    if (RTXDI_IsValidDIReservoir(reservoir) && g_Const.gsgi.resamplingMode != GSGIResamplingMode::None)
     {
         if (!RAB_GetConservativeVisibility(surface, lightSample))
         {

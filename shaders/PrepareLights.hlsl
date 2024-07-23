@@ -86,7 +86,7 @@ void main(uint dispatchThreadId : SV_DispatchThreadID, uint groupThreadId : SV_G
             
             PolymorphicLightInfo lightInfo = (PolymorphicLightInfo) 0;
             
-            if (blockIndex == g_Const.GSGICurrentFrameBlock)
+            if ((blockIndex == g_Const.GSGICurrentFrameBlock) && !g_Const.GSGILockLights)
             {
                 // If we're in the block for the current frame, grab the light from the virtual lights buffer
                 lightInfo = t_VirtualLights[virtualLightIndex];

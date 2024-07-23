@@ -82,6 +82,7 @@ struct PrepareLightsConstants
     uint GSGIPreviousFrameBlock;
     uint GSGISamplesPerFrame;
     uint GSGISampleLifespan;
+    uint GSGILockLights;
 };
 
 struct PrepareLightsTask

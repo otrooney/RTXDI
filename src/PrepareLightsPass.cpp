@@ -491,6 +491,7 @@ RTXDI_LightBufferParameters PrepareLightsPass::Process(
     constants.GSGIPreviousFrameBlock = (context.getFrameIndex() - 1) % gsgiParams.sampleLifespan;
     constants.GSGISamplesPerFrame = gsgiParams.samplesPerFrame;
     constants.GSGISampleLifespan = gsgiParams.sampleLifespan;
+    constants.GSGILockLights = gsgiParams.lockLights;
     commandList->setPushConstants(&constants, sizeof(constants));
 
     commandList->dispatch(dm::div_ceil(lightBufferOffset, 256));

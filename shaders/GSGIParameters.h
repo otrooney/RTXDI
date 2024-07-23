@@ -28,6 +28,7 @@ struct GSGI_Parameters
     float boilingFilter;
     VirtualLightType virtualLightType;
     float lightSize;
+    uint32_t lockLights;
 };
 
 #endif // RTXDI_BRDFPT_PARAMETERS_H
