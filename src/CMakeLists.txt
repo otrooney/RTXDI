@@ -15,13 +15,16 @@ else()
 	add_executable(${project} WIN32 ${sources})
 endif()
 
-target_link_libraries(${project} donut_core donut_engine donut_app donut_render rtxdi-sdk cxxopts)
+target_link_libraries(${project} donut_core donut_engine donut_app donut_render rtxdi-runtime cxxopts)
 add_dependencies(${project} rtxdi-sample-shaders)
 set_target_properties(${project} PROPERTIES FOLDER ${folder})
 
 if (TARGET NRD)
 	target_compile_definitions(${project} PRIVATE WITH_NRD=1)
 	target_link_libraries(${project} NRD)
+	
+	# NRD doesn't add a public include path at this time, work around that
+	target_include_directories(${project} PRIVATE "${CMAKE_SOURCE_DIR}/NRD/Include")
 endif()
 
 if (TARGET DLSS)

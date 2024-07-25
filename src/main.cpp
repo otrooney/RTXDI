@@ -57,7 +57,7 @@
 #include "NrdIntegration.h"
 #endif
 
-#ifdef WITH_DLSS
+#if WITH_DLSS
 #include "DLSS.h"
 #endif
 
@@ -73,7 +73,6 @@ extern "C" {
 using namespace donut;
 using namespace donut::math;
 using namespace std::chrono;
-
 #include "../shaders/ShaderParameters.h"
 
 static int g_ExitCode = 0;
@@ -128,7 +127,7 @@ private:
     std::unique_ptr<NrdIntegration> m_NRD;
 #endif
 
-#ifdef WITH_DLSS
+#if WITH_DLSS
     std::unique_ptr<DLSS> m_DLSS;
 #endif
 
@@ -173,13 +172,13 @@ public:
 
     bool Init()
     {
-        std::filesystem::path mediaPath = app::GetDirectoryWithExecutable().parent_path() / "media";
+        std::filesystem::path mediaPath = app::GetDirectoryWithExecutable().parent_path() / "rtxdi-assets";
         if (!std::filesystem::exists(mediaPath))
         {
-            mediaPath = mediaPath.parent_path().parent_path() / "media";
+            mediaPath = mediaPath.parent_path().parent_path() / "rtxdi-assets";
             if (!std::filesystem::exists(mediaPath))
             {
-                log::error("Couldn't locate the 'media' folder.");
+                log::error("Couldn't locate the 'rtxdi-assets' folder.");
                 return false;
             }
         }
@@ -187,12 +186,12 @@ public:
         std::filesystem::path frameworkShaderPath = app::GetDirectoryWithExecutable() / "shaders/framework" / app::GetShaderTypeName(GetDevice()->getGraphicsAPI());
         std::filesystem::path appShaderPath = app::GetDirectoryWithExecutable() / "shaders/rtxdi-sample" / app::GetShaderTypeName(GetDevice()->getGraphicsAPI());
 
-        log::debug("Mounting %s to %s", mediaPath.string().c_str(), "/media");
+        log::debug("Mounting %s to %s", mediaPath.string().c_str(), "/rtxdi-assets");
         log::debug("Mounting %s to %s", frameworkShaderPath.string().c_str(), "/shaders/donut");
         log::debug("Mounting %s to %s", appShaderPath.string().c_str(), "/shaders/app");
 
         m_RootFs = std::make_shared<vfs::RootFileSystem>();
-        m_RootFs->mount("/media", mediaPath);
+        m_RootFs->mount("/rtxdi-assets", mediaPath);
         m_RootFs->mount("/shaders/donut", frameworkShaderPath);
         m_RootFs->mount("/shaders/app", appShaderPath);
 
@@ -212,7 +211,7 @@ public:
             m_BindlessLayout = GetDevice()->createBindlessLayout(bindlessLayoutDesc);
         }
 
-        std::filesystem::path scenePath = "/media/bistro-rtxdi.scene.json";
+        std::filesystem::path scenePath = "/rtxdi-assets/bistro-rtxdi.scene.json";
 
         m_DescriptorTableManager = std::make_shared<engine::DescriptorTableManager>(GetDevice(), m_BindlessLayout);
 
@@ -247,13 +246,13 @@ public:
         m_LightingPasses = std::make_unique<LightingPasses>(GetDevice(), m_ShaderFactory, m_CommonPasses, m_Scene, m_Profiler, m_BindlessLayout);
 
 
-#ifdef WITH_DLSS
+#if WITH_DLSS
         {
-#ifdef USE_DX12
+#if DONUT_WITH_DX12
             if (GetDevice()->getGraphicsAPI() == nvrhi::GraphicsAPI::D3D12)
                 m_DLSS = DLSS::CreateDX12(GetDevice(), *m_ShaderFactory);
 #endif
-#ifdef USE_VK
+#if DONUT_WITH_VULKAN
             if (GetDevice()->getGraphicsAPI() == nvrhi::GraphicsAPI::VULKAN)
                 m_DLSS = DLSS::CreateVK(GetDevice(), *m_ShaderFactory);
 #endif
@@ -263,11 +262,11 @@ public:
         LoadShaders();
 
         std::vector<std::string> profileNames;
-        m_RootFs->enumerateFiles("/media/ies-profiles", { ".ies" }, vfs::enumerate_to_vector(profileNames));
+        m_RootFs->enumerateFiles("/rtxdi-assets/ies-profiles", { ".ies" }, vfs::enumerate_to_vector(profileNames));
 
         for (const std::string& profileName : profileNames)
         {
-            auto profile = m_IesProfileLoader->LoadIesProfile(*m_RootFs, "/media/ies-profiles/" + profileName);
+            auto profile = m_IesProfileLoader->LoadIesProfile(*m_RootFs, "/rtxdi-assets/ies-profiles/" + profileName);
 
             if (profile)
             {
@@ -771,7 +770,7 @@ public:
             m_NRD->Initialize(m_RenderTargets->Size.x, m_RenderTargets->Size.y);
         }
 #endif
-#ifdef WITH_DLSS
+#if WITH_DLSS
         {
             m_DLSS->SetRenderSize(m_RenderTargets->Size.x, m_RenderTargets->Size.y, m_RenderTargets->Size.x, m_RenderTargets->Size.y);
             
@@ -830,7 +829,7 @@ public:
             break;
         }
 
-#ifdef WITH_DLSS
+#if WITH_DLSS
         case AntiAliasingMode::DLSS: {
             m_DLSS->Render(commandList, *m_RenderTargets, m_ToneMappingPass->GetExposureBuffer(), m_ui.dlssExposureScale, m_ui.dlssSharpness, m_ui.rasterizeGBuffer, m_ui.resetAccumulation, m_View, m_ViewPrevious);
             break;
@@ -968,7 +967,7 @@ public:
         m_PreviousFrameTimeStamp = steady_clock::now();
 
 #if WITH_NRD
-        if (m_NRD && m_NRD->GetMethod() != m_ui.denoisingMethod)
+        if (m_NRD && m_NRD->GetDenoiser() != m_ui.denoisingMethod)
             m_NRD = nullptr; // need to create a new one
 #endif
 
@@ -1089,7 +1088,7 @@ public:
             m_ui.enableDenoiser = false;
 
         uint32_t denoiserMode = (m_ui.enableDenoiser)
-            ? (m_ui.denoisingMethod == nrd::Method::RELAX_DIFFUSE_SPECULAR) ? DENOISER_MODE_RELAX : DENOISER_MODE_REBLUR
+            ? (m_ui.denoisingMethod == nrd::Denoiser::RELAX_DIFFUSE_SPECULAR) ? DENOISER_MODE_RELAX : DENOISER_MODE_REBLUR
             : DENOISER_MODE_OFF;
 #else
         m_ui.enableDenoiser = false;
@@ -1299,7 +1298,7 @@ public:
             ProfilerScope scope(*m_Profiler, m_CommandList, ProfilerSection::Denoising);
             m_CommandList->beginMarker("Denoising");
 
-            const void* methodSettings = (m_ui.denoisingMethod == nrd::Method::RELAX_DIFFUSE_SPECULAR)
+            const void* methodSettings = (m_ui.denoisingMethod == nrd::Denoiser::RELAX_DIFFUSE_SPECULAR)
                 ? (void*)&m_ui.relaxSettings
                 : (void*)&m_ui.reblurSettings;
 
@@ -1558,19 +1557,19 @@ int main(int argc, char** argv)
     
     app::DeviceManager* deviceManager = app::DeviceManager::Create(args.graphicsApi);
 
-#if defined(USE_VK)
+#if DONUT_WITH_VULKAN
     if (args.graphicsApi == nvrhi::GraphicsAPI::VULKAN)
     {
         // Set the extra device feature bit(s)
-        deviceParams.deviceCreateInfoCallback = [](vk::DeviceCreateInfo& info) {
-            auto features = const_cast<vk::PhysicalDeviceFeatures*>(info.pEnabledFeatures);
-            features->setFragmentStoresAndAtomics(true);
-#if defined(WITH_DLSS)
-            features->setShaderStorageImageWriteWithoutFormat(true);
+        deviceParams.deviceCreateInfoCallback = [](VkDeviceCreateInfo& info) {
+            auto features = const_cast<VkPhysicalDeviceFeatures*>(info.pEnabledFeatures);
+            features->fragmentStoresAndAtomics = VK_TRUE;
+#if WITH_DLSS
+            features->shaderStorageImageWriteWithoutFormat = VK_TRUE;
 #endif
         };
 
-#if defined(WITH_DLSS)
+#if WITH_DLSS
         DLSS::GetRequiredVulkanExtensions(
             deviceParams.optionalVulkanInstanceExtensions,
             deviceParams.optionalVulkanDeviceExtensions);
@@ -1616,7 +1615,7 @@ int main(int argc, char** argv)
         return 1;
     }
 
-#if USE_DX12
+#if DONUT_WITH_DX12
     if (args.graphicsApi == nvrhi::GraphicsAPI::D3D12 && args.disableBackgroundOptimization)
     {
         // On DX12, optionally disable the background shader optimization because it leads to stutter on some NV driver versions (496.61 specifically).

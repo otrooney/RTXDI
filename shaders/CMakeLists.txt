@@ -1,6 +1,6 @@
 
 include("${DONUT_PATH}/compileshaders.cmake")
-file(GLOB shaders "*.h*" "LightingPasses/*.h*" "DebugViz/*.h*" "../rtxdi-sdk/shaders/*.hlsl" "../rtxdi-sdk/include/*.hlsli")
+file(GLOB shaders "*.h*" "LightingPasses/*.h*" "DebugViz/*.h*" "../rtxdi-runtime/shaders/*.hlsl" "../rtxdi-runtime/include/*.hlsli")
 
 set(project rtxdi-sample)
 set(folder "RTXDI SDK")
@@ -28,10 +28,10 @@ if (DONUT_WITH_DX12)
    set(DX12_COMPILER_OPTIONS 
       --platform DXIL
       --shaderModel 6_5
-      --blob
+      --binaryBlob
       --outputExt .bin
       -I ${DONUT_SHADER_INCLUDE_DIR}
-      -I ${CMAKE_CURRENT_SOURCE_DIR}/../rtxdi-sdk/include
+      -I ${CMAKE_CURRENT_SOURCE_DIR}/../rtxdi-runtime/include
       --relaxedInclude "../Types.h"
       ${NRD_OPTIONS}
       ${USE_API_OPTION}
@@ -49,10 +49,10 @@ if (DONUT_WITH_VULKAN)
       --platform SPIRV
       --shaderModel 6_5
       --vulkanVersion 1.2
-      --blob
+      --binaryBlob
       --outputExt .bin
       -I ${DONUT_SHADER_INCLUDE_DIR}
-      -I ${CMAKE_CURRENT_SOURCE_DIR}/../rtxdi-sdk/include
+      -I ${CMAKE_CURRENT_SOURCE_DIR}/../rtxdi-runtime/include
       --relaxedInclude "../Types.h"
       ${NRD_OPTIONS}
       ${USE_API_OPTION}
