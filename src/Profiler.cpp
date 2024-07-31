@@ -37,7 +37,7 @@ static const char* g_SectionNames[ProfilerSection::Count] = {
     "GI - Final Shading",
     "GSGI - Sample Geometry",
     "GSGI - Initial Samples",
-    "GSGI - ReGIR Resampling",
+    "GSGI - World Space Resampling",
     "GSGI - Screen Space Resampling",
     "GSGI - Create Lights",
     "Gradients",

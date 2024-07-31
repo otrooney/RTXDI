@@ -338,9 +338,9 @@ void LightingPasses::createGSGIPipelines(const std::vector<donut::engine::Shader
 {
     m_GSGISampleGeometryPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGISampleGeometry.hlsl", {}, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
     m_GSGIInitialSamplesPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGIInitialSamples.hlsl", regirMacros, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
-    CreateComputePass(m_GSGIReGIRZeroingPass, "app/LightingPasses/GSGIReGIRZeroing.hlsl", regirMacros);
-    CreateComputePass(m_GSGIReGIRBuildingPass, "app/LightingPasses/GSGIReGIRBuilding.hlsl", regirMacros);
-    m_GSGIReGIRResamplingPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGIReGIRResampling.hlsl", regirMacros, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
+    CreateComputePass(m_GSGIWorldSpaceZeroingPass, "app/LightingPasses/GSGIWorldSpaceZeroing.hlsl", regirMacros);
+    CreateComputePass(m_GSGIWorldSpaceBuildingPass, "app/LightingPasses/GSGIWorldSpaceBuilding.hlsl", regirMacros);
+    m_GSGIWorldSpaceResamplingPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGIWorldSpaceResampling.hlsl", regirMacros, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
     m_GSGIScreenSpaceResamplingPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGIScreenSpaceResampling.hlsl", {}, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
     m_GSGICreateLightsPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGICreateLights.hlsl", {}, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
 }
@@ -582,14 +582,14 @@ void LightingPasses::GenerateGSGILights(
 
     ExecuteRayTracingPass(commandList, m_GSGIInitialSamplesPass, localSettings.enableRayCounts, "GSGIInitialSamples", dispatchSize, ProfilerSection::GSGIInitialSamples);
 
-    if (localSettings.gsgiParams.resamplingMode == ReGIR)
+    if (localSettings.gsgiParams.resamplingMode == WorldSpace)
     {
         dm::int2 worldGridDispatchSize = {
             dm::div_ceil(regirContext.getReGIRLightSlotCount(), 256),
             1
         };
 
-        ExecuteComputePass(commandList, m_GSGIReGIRZeroingPass, "GSGIReGIRZeroingPass", worldGridDispatchSize, ProfilerSection::GSGIReGIRResampling);
+        ExecuteComputePass(commandList, m_GSGIWorldSpaceZeroingPass, "GSGIWorldSpaceZeroingPass", worldGridDispatchSize, ProfilerSection::GSGIWorldSpaceResampling);
         nvrhi::utils::BufferUavBarrier(commandList, m_GSGIGridBuffer);
 
         dm::int2 gridBuildingDispatchSize = {
@@ -597,9 +597,9 @@ void LightingPasses::GenerateGSGILights(
             1
         };
 
-        ExecuteComputePass(commandList, m_GSGIReGIRBuildingPass, "GSGIReGIRBuildingPass", gridBuildingDispatchSize, ProfilerSection::GSGIReGIRResampling);
+        ExecuteComputePass(commandList, m_GSGIWorldSpaceBuildingPass, "GSGIWorldSpaceBuildingPass", gridBuildingDispatchSize, ProfilerSection::GSGIWorldSpaceResampling);
         nvrhi::utils::BufferUavBarrier(commandList, m_GSGIGridBuffer);
-        ExecuteRayTracingPass(commandList, m_GSGIReGIRResamplingPass, localSettings.enableRayCounts, "GSGIReGIRResampling", dispatchSize, ProfilerSection::GSGIReGIRResampling);
+        ExecuteRayTracingPass(commandList, m_GSGIWorldSpaceResamplingPass, localSettings.enableRayCounts, "GSGIWorldSpaceResampling", dispatchSize, ProfilerSection::GSGIWorldSpaceResampling);
     }
     else if (localSettings.gsgiParams.resamplingMode == ScreenSpace)
     {

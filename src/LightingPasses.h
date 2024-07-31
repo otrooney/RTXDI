@@ -71,8 +71,8 @@ private:
     ComputePass m_PresampleLightsPass;
     ComputePass m_PresampleEnvironmentMapPass;
     ComputePass m_PresampleReGIR;
-    ComputePass m_GSGIReGIRZeroingPass;
-    ComputePass m_GSGIReGIRBuildingPass;
+    ComputePass m_GSGIWorldSpaceZeroingPass;
+    ComputePass m_GSGIWorldSpaceBuildingPass;
     RayTracingPass m_GenerateInitialSamplesPass;
     RayTracingPass m_TemporalResamplingPass;
     RayTracingPass m_SpatialResamplingPass;
@@ -87,7 +87,7 @@ private:
     RayTracingPass m_GIFinalShadingPass;
     RayTracingPass m_GSGISampleGeometryPass;
     RayTracingPass m_GSGIInitialSamplesPass;
-    RayTracingPass m_GSGIReGIRResamplingPass;
+    RayTracingPass m_GSGIWorldSpaceResamplingPass;
     RayTracingPass m_GSGIScreenSpaceResamplingPass;
     RayTracingPass m_GSGICreateLightsPass;
     nvrhi::BindingLayoutHandle m_BindingLayout;

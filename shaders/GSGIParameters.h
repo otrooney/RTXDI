@@ -14,7 +14,7 @@ enum VirtualLightType
 enum GSGIResamplingMode
 {
     None,
-    ReGIR,
+    WorldSpace,
     ScreenSpace
 };
 
