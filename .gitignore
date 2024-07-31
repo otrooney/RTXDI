@@ -8,3 +8,4 @@
 *.sublime-workspace
 compile-shaders.bat
 /tests
+/thirdparty
