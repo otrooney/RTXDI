@@ -25,7 +25,6 @@ struct GSGI_Parameters
     float sampleOriginOffset;
     GSGIResamplingMode resamplingMode;
     float scalingFactor;
-    float boilingFilter;
     VirtualLightType virtualLightType;
     float lightSize;
     uint32_t lockLights;

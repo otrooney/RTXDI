@@ -51,7 +51,6 @@ void RayGen()
     
     // Account for scaling factor, sample density, etc.
     luminance *= g_Const.gsgi.scalingFactor;
-    // luminance = min(luminance, g_Const.gsgi.boilingFilter);
     
     luminance *= gsgiGBufferData.rSampleDensity * gsgiGBufferData.sumOfWeights;
     float3 radiance = surface.diffuseAlbedo * luminance * 0.01;
@@ -63,7 +62,7 @@ void RayGen()
         // Represent as a disk light
         float radius = gsgiGBufferData.distanceToRayOrigin * g_Const.gsgi.lightSize;
         radiance /= pow(g_Const.gsgi.lightSize, 2);
-
+        
         packLightColor(radiance, lightInfo);
         lightInfo.center = gsgiGBufferData.worldPos;
         lightInfo.colorTypeAndFlags |= uint(PolymorphicLightType::kDisk) << kPolymorphicLightTypeShift;
@@ -75,6 +74,7 @@ void RayGen()
         // Represent as a spot light
         float radius = gsgiGBufferData.distanceToRayOrigin * g_Const.gsgi.lightSize;
         radiance /= pow(g_Const.gsgi.lightSize, 2);
+        radiance *= 0.35;
 
         packLightColor(radiance, lightInfo);
         lightInfo.colorTypeAndFlags |= uint(PolymorphicLightType::kSphere) << kPolymorphicLightTypeShift;
@@ -84,7 +84,7 @@ void RayGen()
         
         lightInfo.primaryAxis = ndirToOctUnorm32(gsgiGBufferData.geoNormal);
         lightInfo.cosConeAngleAndSoftness = f32tof16(-1.0f);
-        lightInfo.cosConeAngleAndSoftness |= f32tof16(0.0f) << 16;
+        lightInfo.cosConeAngleAndSoftness |= f32tof16(1.0f) << 16;
     }
     else
     {
