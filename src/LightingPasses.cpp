@@ -83,7 +83,6 @@ GSGI_Parameters getDefaultGSGIParams()
     params.sampleOriginOffset = 1.0f;
     params.resamplingMode = None;
     params.scalingFactor = 300.0f;
-    params.virtualLightType = Disk;
     params.lightSize = 0.01f;
     params.distanceLimit = 0.1f;
     params.virtualLightContribution = DiffuseAndSpecular;

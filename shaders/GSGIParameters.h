@@ -4,13 +4,6 @@
 
 #include <rtxdi/ReSTIRDIParameters.h>
 
-enum VirtualLightType
-{
-    Point,
-    Disk,
-    Spot
-};
-
 enum GSGIResamplingMode
 {
     None,
@@ -31,7 +24,6 @@ struct GSGI_Parameters
     float sampleOriginOffset;
     GSGIResamplingMode resamplingMode;
     float scalingFactor;
-    VirtualLightType virtualLightType;
     float lightSize;
     float distanceLimit;
     VirtualLightContribution virtualLightContribution;
