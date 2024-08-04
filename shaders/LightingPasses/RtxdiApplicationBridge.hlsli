@@ -635,7 +635,7 @@ float RAB_GetLightSampleTargetPdfForSurface(RAB_LightSample lightSample, RAB_Sur
 
     float d = Lambert(surface.normal, -L);
     float3 s;
-    if (surface.roughness == 0)
+    if (surface.roughness == 0 || (lightSample.lightType == PolymorphicLightType::kVirtual && g_Const.gsgi.virtualLightContribution == VirtualLightContribution::DiffuseOnly))
         s = 0;
     else
         s = GGX_times_NdotL(V, L, surface.normal, max(surface.roughness, kMinRoughness), surface.specularF0);
@@ -659,7 +659,7 @@ float RAB_GetLightTargetPdfForVolume(RAB_LightInfo light, float3 volumeCenter, f
 // in the PDF texture, normalized to the (0..1) range.
 RAB_LightSample RAB_SamplePolymorphicLight(RAB_LightInfo lightInfo, RAB_Surface surface, float2 uv)
 {
-    PolymorphicLightSample pls = PolymorphicLight::calcSample(lightInfo, uv, surface.worldPos);
+    PolymorphicLightSample pls = PolymorphicLight::calcSample(lightInfo, uv, surface.worldPos, g_Const.gsgi.distanceLimit);
 
     RAB_LightSample lightSample;
     lightSample.position = pls.position;

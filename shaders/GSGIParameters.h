@@ -18,6 +18,12 @@ enum GSGIResamplingMode
     ScreenSpace
 };
 
+enum VirtualLightContribution
+{
+    DiffuseAndSpecular,
+    DiffuseOnly
+};
+
 struct GSGI_Parameters
 {
     uint32_t samplesPerFrame;
@@ -27,6 +33,8 @@ struct GSGI_Parameters
     float scalingFactor;
     VirtualLightType virtualLightType;
     float lightSize;
+    float distanceLimit;
+    VirtualLightContribution virtualLightContribution;
     uint32_t lockLights;
 };
 

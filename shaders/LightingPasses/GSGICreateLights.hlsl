@@ -65,7 +65,7 @@ void RayGen()
         
         packLightColor(radiance, lightInfo);
         lightInfo.center = gsgiGBufferData.worldPos;
-        lightInfo.colorTypeAndFlags |= uint(PolymorphicLightType::kDisk) << kPolymorphicLightTypeShift;
+        lightInfo.colorTypeAndFlags |= uint(PolymorphicLightType::kVirtual) << kPolymorphicLightTypeShift;
         lightInfo.scalars = f32tof16(radius);
         lightInfo.direction1 = ndirToOctUnorm32(gsgiGBufferData.geoNormal);
     }

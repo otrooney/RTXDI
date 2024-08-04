@@ -310,7 +310,8 @@ enum PolymorphicLightType
     kTriangle,
     kDirectional,
     kEnvironment,
-    kPoint
+    kPoint,
+    kVirtual
 };
 
 // Stores shared light information (type) and specific light information

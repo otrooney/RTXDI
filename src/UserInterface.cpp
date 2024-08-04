@@ -836,6 +836,8 @@ void UserInterface::SamplingSettings()
             m_ui.resetAccumulation |= ImGui::SliderFloat("Scaling factor", &m_ui.lightingSettings.gsgiParams.scalingFactor, 0.001f, 1000.0f);
             m_ui.resetAccumulation |= ImGui::Combo("Light type", (int*)&m_ui.lightingSettings.gsgiParams.virtualLightType,"Point\0Disk\0Spot\0");
             m_ui.resetAccumulation |= ImGui::SliderFloat("Light size", &m_ui.lightingSettings.gsgiParams.lightSize, 0.001f, 1.0f);
+            m_ui.resetAccumulation |= ImGui::SliderFloat("Virtual light distance clamp", &m_ui.lightingSettings.gsgiParams.distanceLimit, 0.001f, 1.0f);
+            m_ui.resetAccumulation |= ImGui::Combo("Virtual light contribution", (int*)&m_ui.lightingSettings.gsgiParams.virtualLightContribution, "DiffuseAndSpecular\0DiffuseOnly\0");
             m_ui.resetAccumulation |= ImGui::Checkbox("Freeze virtual lights", (bool*)&m_ui.lightingSettings.gsgiParams.lockLights);
         }
 
