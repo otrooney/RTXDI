@@ -1204,6 +1204,8 @@ public:
         if (lightingSettings.denoiserMode == DENOISER_MODE_OFF)
             lightingSettings.enableGradients = false;
 
+        lightingSettings.gsgiParams.clampingRatio = lightingSettings.gsgiParams.clampingDistance / lightingSettings.gsgiParams.lightSize;
+
         const bool checkerboard = restirDIContext.getStaticParameters().CheckerboardSamplingMode != rtxdi::CheckerboardMode::Off;
 
         bool enableDirectReStirPass = m_ui.directLightingMode == DirectLightingMode::ReStir;

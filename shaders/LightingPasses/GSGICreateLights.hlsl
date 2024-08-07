@@ -47,20 +47,15 @@ void RayGen()
     SplitBrdf brdf = EvaluateBrdf(surface, lightSample.position);
     float3 diffuse = brdf.demodulatedDiffuse * lightSample.radiance;
     
-    float luminance = calcLuminance(diffuse * surface.diffuseAlbedo);
-    
     // Account for scaling factor, sample density, etc.
-    luminance *= g_Const.gsgi.scalingFactor;
+    float scalingFactor = gsgiGBufferData.rSampleDensity * gsgiGBufferData.sumOfWeights * g_Const.gsgi.scalingFactor;
+    float3 radiance = surface.diffuseAlbedo * diffuse * scalingFactor;
     
-    luminance *= gsgiGBufferData.rSampleDensity * gsgiGBufferData.sumOfWeights;
-    float3 radiance = surface.diffuseAlbedo * luminance * 0.01;
-    
-    PolymorphicLightInfo lightInfo = (PolymorphicLightInfo) 0;
-    
-    // Represent as a virtual light
     float radius = gsgiGBufferData.distanceToRayOrigin * g_Const.gsgi.lightSize;
-    radiance /= pow(g_Const.gsgi.lightSize, 2);
-        
+    radiance /= square(g_Const.gsgi.lightSize);
+    
+    // Represent as a virtual light type
+    PolymorphicLightInfo lightInfo = (PolymorphicLightInfo) 0;
     packLightColor(radiance, lightInfo);
     lightInfo.center = gsgiGBufferData.worldPos;
     lightInfo.colorTypeAndFlags |= uint(PolymorphicLightType::kVirtual) << kPolymorphicLightTypeShift;

@@ -487,7 +487,7 @@ struct VirtualLight
 
     // Interface methods
 
-    PolymorphicLightSample calcSample(in const float2 random, in const float3 viewerPosition, in const float minDistanceRatio)
+    PolymorphicLightSample calcSample(in const float2 random, in const float3 viewerPosition, in const float clampDistanceRatio)
     {
         float3 tangent;
         float3 bitangent;
@@ -508,16 +508,13 @@ struct VirtualLight
         const float3 sampleVector = diskPositionSample - viewerPosition;
         const float sampleDistance = length(sampleVector);
         const float sampleCosTheta = dot(normalize(sampleVector), -diskNormalSample);
-        // const float solidAnglePdf = areaPdf * square(sampleDistance) / abs(sampleCosTheta);
-        
-        float solidAnglePdf = 0.0;
         
         // Clamp to a near distance limit to prevent weak singularities.
         // TODO: Add compensation term
         // The clamping distance is defined as a ratio to the radius of the virtual lights. As the radius
         // is inversely proportional to the sample density, this ensures the clamping distance also is.
-        float minDistance = minDistanceRatio * radius * 100;
-        solidAnglePdf = areaPdf * square(max(sampleDistance, minDistance)) / abs(sampleCosTheta);
+        float minDistance = clampDistanceRatio * radius;
+        float solidAnglePdf = areaPdf * square(max(sampleDistance, minDistance)) / abs(sampleCosTheta);
 
         // Create the light sample
         PolymorphicLightSample lightSample;
@@ -914,7 +911,7 @@ struct PolymorphicLight
         in const PolymorphicLightInfo lightInfo,
         in const float2 random,
         in const float3 viewerPosition,
-        in const float minDistance
+        in const float clampDistanceRatio
     )
     {
         PolymorphicLightSample lightSample = (PolymorphicLightSample)0;
@@ -929,7 +926,7 @@ struct PolymorphicLight
         case PolymorphicLightType::kTriangle:    lightSample = TriangleLight::Create(lightInfo).calcSample(random, viewerPosition); break;
         case PolymorphicLightType::kDirectional: lightSample = DirectionalLight::Create(lightInfo).calcSample(random, viewerPosition); break;
         case PolymorphicLightType::kEnvironment: lightSample = EnvironmentLight::Create(lightInfo).calcSample(random, viewerPosition); break;
-        case PolymorphicLightType::kVirtual:     lightSample = VirtualLight::Create(lightInfo).calcSample(random, viewerPosition, minDistance); break;
+        case PolymorphicLightType::kVirtual:     lightSample = VirtualLight::Create(lightInfo).calcSample(random, viewerPosition, clampDistanceRatio); break;
         }
 
         if (lightSample.solidAnglePdf > 0)

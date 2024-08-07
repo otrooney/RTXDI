@@ -25,7 +25,8 @@ struct GSGI_Parameters
     GSGIResamplingMode resamplingMode;
     float scalingFactor;
     float lightSize;
-    float distanceLimit;
+    float clampingDistance;
+    float clampingRatio;
     VirtualLightContribution virtualLightContribution;
     uint32_t lockLights;
 };

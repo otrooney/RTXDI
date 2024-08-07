@@ -659,7 +659,7 @@ float RAB_GetLightTargetPdfForVolume(RAB_LightInfo light, float3 volumeCenter, f
 // in the PDF texture, normalized to the (0..1) range.
 RAB_LightSample RAB_SamplePolymorphicLight(RAB_LightInfo lightInfo, RAB_Surface surface, float2 uv)
 {
-    PolymorphicLightSample pls = PolymorphicLight::calcSample(lightInfo, uv, surface.worldPos, g_Const.gsgi.distanceLimit);
+    PolymorphicLightSample pls = PolymorphicLight::calcSample(lightInfo, uv, surface.worldPos, g_Const.gsgi.clampingRatio);
 
     RAB_LightSample lightSample;
     lightSample.position = pls.position;

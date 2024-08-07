@@ -82,9 +82,10 @@ GSGI_Parameters getDefaultGSGIParams()
     params.sampleLifespan = 8;
     params.sampleOriginOffset = 1.0f;
     params.resamplingMode = None;
-    params.scalingFactor = 300.0f;
+    params.scalingFactor = 0.5f;
     params.lightSize = 0.01f;
-    params.distanceLimit = 0.1f;
+    params.clampingDistance = 0.1f;
+    params.clampingRatio = 10.0f;
     params.virtualLightContribution = DiffuseAndSpecular;
     params.lockLights = false;
     return params;
