@@ -25,6 +25,7 @@ static const char* g_SectionNames[ProfilerSection::Count] = {
     "Presample Lights",
     "Presample Env. Map",
     "ReGIR Build",
+    "DirReGIR Build",
     "Initial Samples",
     "Temporal Resampling",
     "Spatial Resampling",

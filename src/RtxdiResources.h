@@ -39,6 +39,8 @@ public:
     nvrhi::BufferHandle LightIndexMappingBuffer;
     nvrhi::BufferHandle RisBuffer;
     nvrhi::BufferHandle RisLightDataBuffer;
+    nvrhi::BufferHandle DirReGIRBuffer;
+    nvrhi::BufferHandle DirReGIRLightDataBuffer;
     nvrhi::BufferHandle NeighborOffsetsBuffer;
     nvrhi::BufferHandle LightReservoirBuffer;
     nvrhi::BufferHandle SecondaryGBuffer;
@@ -60,7 +62,8 @@ public:
         uint32_t environmentMapWidth,
         uint32_t environmentMapHeight,
         uint32_t GSGIsamplesPerFrame,
-        uint32_t GSGIsampleLifespan);
+        uint32_t GSGIsampleLifespan,
+        uint32_t reGIRCellCount);
 
     void InitializeNeighborOffsets(nvrhi::ICommandList* commandList, uint32_t neighborOffsetCount);
 

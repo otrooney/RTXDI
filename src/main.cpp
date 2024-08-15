@@ -667,6 +667,8 @@ public:
             uint32_t meshAllocationQuantum = 128;
             uint32_t triangleAllocationQuantum = 1024;
             uint32_t primitiveAllocationQuantum = 128;
+            rtxdi::ReGIRContext regirContext = m_isContext->getReGIRContext();
+            uint32_t reGIRCellCount = regirContext.getReGIRLightSlotCount() / regirContext.getReGIRStaticParameters().LightsPerCell;
 
             m_RtxdiResources = std::make_unique<RtxdiResources>(
                 GetDevice(), 
@@ -679,7 +681,8 @@ public:
                 environmentMapSize.x,
                 environmentMapSize.y,
                 gsgiSettings.samplesPerFrame,
-                gsgiSettings.sampleLifespan);
+                gsgiSettings.sampleLifespan,
+                reGIRCellCount);
 
             m_PrepareLightsPass->CreateBindingSet(*m_RtxdiResources);
             
@@ -719,7 +722,7 @@ public:
         if (rtxdiResourcesCreated || m_ui.reloadShaders)
         {
             // Some RTXDI context settings affect the shader permutations
-            m_LightingPasses->CreatePipelines(m_ui.regirStaticParams, m_ui.useRayQuery);
+            m_LightingPasses->CreatePipelines(m_ui.regirStaticParams, m_ui.useRayQuery, m_ui.lightingSettings.reGIRMode);
         }
 
         m_ui.reloadShaders = false;

@@ -50,6 +50,12 @@ namespace nrd
     struct HitDistanceParameters;
 }
 
+enum ReGIRMode
+{
+    Standard,
+    Directional
+};
+
 // A 32-bit bool type to directly use from the command line parser.
 typedef int ibool;
 
@@ -71,6 +77,7 @@ private:
     ComputePass m_PresampleLightsPass;
     ComputePass m_PresampleEnvironmentMapPass;
     ComputePass m_PresampleReGIR;
+    ComputePass m_PresampleDirReGIR;
     ComputePass m_GSGIWorldSpaceZeroingPass;
     ComputePass m_GSGIWorldSpaceBuildingPass;
     RayTracingPass m_GenerateInitialSamplesPass;
@@ -135,6 +142,8 @@ public:
         float gradientSensitivity = 8.f;
         float confidenceHistoryLength = 0.75f;
 
+        ReGIRMode reGIRMode = Standard;
+
         BRDFPathTracing_Parameters brdfptParams = getDefaultBRDFPathTracingParams();
         GSGI_Parameters gsgiParams = getDefaultGSGIParams();
         
@@ -152,7 +161,7 @@ public:
         std::shared_ptr<Profiler> profiler,
         nvrhi::IBindingLayout* bindlessLayout);
 
-    void CreatePipelines(const rtxdi::ReGIRStaticParameters& regirStaticParams, bool useRayQuery);
+    void CreatePipelines(const rtxdi::ReGIRStaticParameters& regirStaticParams, bool useRayQuery, ReGIRMode reGIRMode);
 
     void CreateBindingSet(
         nvrhi::rt::IAccelStruct* topLevelAS,
@@ -212,7 +221,7 @@ private:
         const rtxdi::ImportanceSamplingContext& isContext);
 
     void createPresamplingPipelines();
-    void createReGIRPipeline(const rtxdi::ReGIRStaticParameters& regirStaticParams, const std::vector<donut::engine::ShaderMacro>& regirMacros);
+    void createReGIRPipeline(const rtxdi::ReGIRStaticParameters& regirStaticParams, const std::vector<donut::engine::ShaderMacro>& regirMacros, const ReGIRMode reGIRMode);
     void createReSTIRDIPipelines(const std::vector<donut::engine::ShaderMacro>& regirMacros, bool useRayQuery);
     void createReSTIRGIPipelines(bool useRayQuery);
     void createGSGIPipelines(const std::vector<donut::engine::ShaderMacro>& regirMacros, bool useRayQuery);

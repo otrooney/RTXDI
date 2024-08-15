@@ -22,6 +22,7 @@ struct ProfilerSection
         PresampleLights,
         PresampleEnvMap,
         PresampleReGIR,
+        PresampleDirReGIR,
         InitialSamples,
         TemporalResampling,
         SpatialResampling,

@@ -29,7 +29,8 @@ RtxdiResources::RtxdiResources(
     uint32_t environmentMapWidth,
     uint32_t environmentMapHeight,
     uint32_t GSGIsamplesPerFrame,
-    uint32_t GSGIsampleLifespan)
+    uint32_t GSGIsampleLifespan,
+    uint32_t reGIRCellCount)
     : m_MaxEmissiveMeshes(maxEmissiveMeshes)
     , m_MaxEmissiveTriangles(maxEmissiveTriangles)
     , m_MaxPrimitiveLights(maxPrimitiveLights)
@@ -79,11 +80,27 @@ RtxdiResources::RtxdiResources(
     risBufferDesc.canHaveUAVs = true;
     RisBuffer = device->createBuffer(risBufferDesc);
 
-
     risBufferDesc.byteSize = sizeof(uint32_t) * 8 * std::max(risBufferSegmentAllocator.getTotalSizeInElements(), 1u); // RGBA32_UINT x 2 per element
     risBufferDesc.format = nvrhi::Format::RGBA32_UINT;
     risBufferDesc.debugName = "RisLightDataBuffer";
     RisLightDataBuffer = device->createBuffer(risBufferDesc);
+
+
+    nvrhi::BufferDesc dirReGIRBufferDesc;
+    dirReGIRBufferDesc.byteSize = sizeof(uint32_t) * 2 * std::max(reGIRCellCount * 32 * 32, 1u); // RG32_UINT per element
+    dirReGIRBufferDesc.format = nvrhi::Format::RG32_UINT;
+    dirReGIRBufferDesc.canHaveTypedViews = true;
+    dirReGIRBufferDesc.initialState = nvrhi::ResourceStates::ShaderResource;
+    dirReGIRBufferDesc.keepInitialState = true;
+    dirReGIRBufferDesc.debugName = "DirReGIRBuffer";
+    dirReGIRBufferDesc.canHaveUAVs = true;
+    DirReGIRBuffer = device->createBuffer(dirReGIRBufferDesc);
+
+    dirReGIRBufferDesc.byteSize = sizeof(uint32_t) * 8 * std::max(reGIRCellCount * 32 * 32, 1u); // RGBA32_UINT x 2 per element
+    dirReGIRBufferDesc.format = nvrhi::Format::RGBA32_UINT;
+    dirReGIRBufferDesc.debugName = "DirReGIRLightDataBuffer";
+    DirReGIRLightDataBuffer = device->createBuffer(dirReGIRBufferDesc);
+
 
     uint32_t maxLocalLights = maxEmissiveTriangles + maxPrimitiveLights + maxVirtualLights;
     uint32_t lightBufferElements = maxLocalLights * 2;

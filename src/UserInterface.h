@@ -137,7 +137,7 @@ struct UIData
     uint32_t numAccumulatedFrames = 1;
 
     DirectLightingMode directLightingMode = DirectLightingMode::ReStir;
-    IndirectLightingMode indirectLightingMode = IndirectLightingMode::GSGI;
+    IndirectLightingMode indirectLightingMode = IndirectLightingMode::None;
     ibool enableAnimations = true;
     float animationSpeed = 1.f;
     int environmentMapDirty = 0; // 1 -> needs to be rendered; 2 -> passes/textures need to be created

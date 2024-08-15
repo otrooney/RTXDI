@@ -12,6 +12,12 @@
 
 #include "RtxdiApplicationBridge.hlsli"
 
+#ifdef RTXDI_ENABLE_PRESAMPLING
+#if RTXDI_REGIR_MODE != RTXDI_REGIR_MODE_DISABLED
+#include "DirReGIRGenerateSamples.hlsli"
+#endif
+#endif
+
 #include <rtxdi/InitialSamplingFunctions.hlsli>
 
 #if USE_RAY_QUERY
@@ -44,15 +50,36 @@ void RayGen()
         0.001f);
 
     RAB_LightSample lightSample;
+    
+#ifdef RTXDI_ENABLE_PRESAMPLING
+#if RTXDI_REGIR_MODE != RTXDI_REGIR_MODE_DISABLED
+    RTXDI_DIReservoir reservoir = RTXDI_EmptyDIReservoir();
+    
+    if (g_Const.dirReGIR.dirReGIRenabled)
+    {
+        reservoir = SampleLightsForSurfaceWithDirectionalReGIR(rng, tileRng, surface,
+            sampleParams, g_Const.lightBufferParams, g_Const.restirDI.initialSamplingParams.localLightSamplingMode,
+            g_Const.localLightsRISBufferSegmentParams, g_Const.environmentLightRISBufferSegmentParams,
+            g_Const.regir, lightSample);
+    }
+    else
+    {
+        reservoir = RTXDI_SampleLightsForSurface(rng, tileRng, surface,
+            sampleParams, g_Const.lightBufferParams, g_Const.restirDI.initialSamplingParams.localLightSamplingMode,
+            g_Const.localLightsRISBufferSegmentParams, g_Const.environmentLightRISBufferSegmentParams,
+            g_Const.regir, lightSample);
+    }
+#else
     RTXDI_DIReservoir reservoir = RTXDI_SampleLightsForSurface(rng, tileRng, surface,
         sampleParams, g_Const.lightBufferParams, g_Const.restirDI.initialSamplingParams.localLightSamplingMode,
-#ifdef RTXDI_ENABLE_PRESAMPLING
         g_Const.localLightsRISBufferSegmentParams, g_Const.environmentLightRISBufferSegmentParams,
-#if RTXDI_REGIR_MODE != RTXDI_REGIR_MODE_DISABLED
-        g_Const.regir,
-#endif
-#endif
         lightSample);
+#endif
+#else
+    RTXDI_DIReservoir reservoir = RTXDI_SampleLightsForSurface(rng, tileRng, surface,
+        sampleParams, g_Const.lightBufferParams, g_Const.restirDI.initialSamplingParams.localLightSamplingMode,
+        lightSample);
+#endif
 
     if (g_Const.restirDI.initialSamplingParams.enableInitialVisibility && RTXDI_IsValidDIReservoir(reservoir))
     {
