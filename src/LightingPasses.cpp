@@ -331,7 +331,7 @@ void LightingPasses::createPresamplingPipelines()
     CreateComputePass(m_PresampleEnvironmentMapPass, "app/LightingPasses/PresampleEnvironmentMap.hlsl", {});
 }
 
-void LightingPasses::createReGIRPipeline(const rtxdi::ReGIRStaticParameters& regirStaticParams, const std::vector<donut::engine::ShaderMacro>& regirMacros, const ReGIRMode reGIRMode)
+void LightingPasses::createReGIRPipeline(const rtxdi::ReGIRStaticParameters& regirStaticParams, const std::vector<donut::engine::ShaderMacro>& regirMacros, const ReGIRType reGIRType)
 {
     if (regirStaticParams.Mode != rtxdi::ReGIRMode::Disabled)
     {
@@ -371,14 +371,14 @@ void LightingPasses::createReSTIRGIPipelines(bool useRayQuery)
     m_GIFinalShadingPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GIFinalShading.hlsl", {}, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
 }
 
-void LightingPasses::CreatePipelines(const rtxdi::ReGIRStaticParameters& regirStaticParams, bool useRayQuery, ReGIRMode reGIRMode)
+void LightingPasses::CreatePipelines(const rtxdi::ReGIRStaticParameters& regirStaticParams, bool useRayQuery, ReGIRType reGIRType)
 {
     std::vector<donut::engine::ShaderMacro> regirMacros = {
         GetRegirMacro(regirStaticParams)
     };
 
     createPresamplingPipelines();
-    createReGIRPipeline(regirStaticParams, regirMacros, reGIRMode);
+    createReGIRPipeline(regirStaticParams, regirMacros, reGIRType);
     createReSTIRDIPipelines(regirMacros, useRayQuery);
     createReSTIRGIPipelines(useRayQuery);
     createGSGIPipelines(regirMacros, useRayQuery);
@@ -508,7 +508,7 @@ void LightingPasses::FillResamplingConstants(
     }
 
     constants.gsgi = lightingSettings.gsgiParams;
-    constants.dirReGIR.dirReGIRenabled = lightingSettings.reGIRMode == Directional;
+    constants.dirReGIRenabled = lightingSettings.reGIRType == ReGIRType::Directional;
 
     m_CurrentFrameOutputReservoir = isContext.getReSTIRDIContext().getBufferIndices().shadingInputBufferIndex;
 }
@@ -559,21 +559,21 @@ void LightingPasses::PrepareForLightSampling(
     if (isContext.isReGIREnabled() &&
         lightBufferParams.localLightBufferRegion.numLights > 0)
     {
-        if (localSettings.reGIRMode == Standard)
-        {
+        //if (localSettings.reGIRType == Standard)
+        //{
             dm::int2 worldGridDispatchSize = {
                 dm::div_ceil(regirContext.getReGIRLightSlotCount(), RTXDI_GRID_BUILD_GROUP_SIZE),
                 1
             };
 
             ExecuteComputePass(commandList, m_PresampleReGIR, "PresampleReGIR", worldGridDispatchSize, ProfilerSection::PresampleReGIR);
-        }
-        else
-        {
+        //}
+        //else
+        //{
             int reGIRCellCount = regirContext.getReGIRLightSlotCount() / regirContext.getReGIRStaticParameters().LightsPerCell;
-            dm::int2 worldGridDispatchSize = {reGIRCellCount, 1};
-            ExecuteComputePass(commandList, m_PresampleDirReGIR, "PresampleDirReGIR", worldGridDispatchSize, ProfilerSection::PresampleDirReGIR);
-        }
+            dm::int2 dirReGIRDispatchSize = {reGIRCellCount, 1};
+            ExecuteComputePass(commandList, m_PresampleDirReGIR, "PresampleDirReGIR", dirReGIRDispatchSize, ProfilerSection::PresampleDirReGIR);
+        //}
     }
 }
 

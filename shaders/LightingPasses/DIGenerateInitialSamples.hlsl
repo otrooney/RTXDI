@@ -55,7 +55,7 @@ void RayGen()
 #if RTXDI_REGIR_MODE != RTXDI_REGIR_MODE_DISABLED
     RTXDI_DIReservoir reservoir = RTXDI_EmptyDIReservoir();
     
-    if (g_Const.dirReGIR.dirReGIRenabled)
+    if (g_Const.dirReGIRenabled)
     {
         reservoir = SampleLightsForSurfaceWithDirectionalReGIR(rng, tileRng, surface,
             sampleParams, g_Const.lightBufferParams, g_Const.restirDI.initialSamplingParams.localLightSamplingMode,
@@ -69,13 +69,19 @@ void RayGen()
             g_Const.localLightsRISBufferSegmentParams, g_Const.environmentLightRISBufferSegmentParams,
             g_Const.regir, lightSample);
     }
-#else
+#endif
+#endif
+    
+#ifdef RTXDI_ENABLE_PRESAMPLING
+#if RTXDI_REGIR_MODE == RTXDI_REGIR_MODE_DISABLED
     RTXDI_DIReservoir reservoir = RTXDI_SampleLightsForSurface(rng, tileRng, surface,
         sampleParams, g_Const.lightBufferParams, g_Const.restirDI.initialSamplingParams.localLightSamplingMode,
         g_Const.localLightsRISBufferSegmentParams, g_Const.environmentLightRISBufferSegmentParams,
         lightSample);
 #endif
-#else
+#endif 
+    
+#ifndef RTXDI_ENABLE_PRESAMPLING
     RTXDI_DIReservoir reservoir = RTXDI_SampleLightsForSurface(rng, tileRng, surface,
         sampleParams, g_Const.lightBufferParams, g_Const.restirDI.initialSamplingParams.localLightSamplingMode,
         lightSample);

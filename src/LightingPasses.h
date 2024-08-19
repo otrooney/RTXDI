@@ -50,7 +50,7 @@ namespace nrd
     struct HitDistanceParameters;
 }
 
-enum ReGIRMode
+enum ReGIRType
 {
     Standard,
     Directional
@@ -142,7 +142,7 @@ public:
         float gradientSensitivity = 8.f;
         float confidenceHistoryLength = 0.75f;
 
-        ReGIRMode reGIRMode = Standard;
+        ReGIRType reGIRType = ReGIRType::Standard;
 
         BRDFPathTracing_Parameters brdfptParams = getDefaultBRDFPathTracingParams();
         GSGI_Parameters gsgiParams = getDefaultGSGIParams();
@@ -161,7 +161,7 @@ public:
         std::shared_ptr<Profiler> profiler,
         nvrhi::IBindingLayout* bindlessLayout);
 
-    void CreatePipelines(const rtxdi::ReGIRStaticParameters& regirStaticParams, bool useRayQuery, ReGIRMode reGIRMode);
+    void CreatePipelines(const rtxdi::ReGIRStaticParameters& regirStaticParams, bool useRayQuery, ReGIRType reGIRType);
 
     void CreateBindingSet(
         nvrhi::rt::IAccelStruct* topLevelAS,
@@ -221,7 +221,7 @@ private:
         const rtxdi::ImportanceSamplingContext& isContext);
 
     void createPresamplingPipelines();
-    void createReGIRPipeline(const rtxdi::ReGIRStaticParameters& regirStaticParams, const std::vector<donut::engine::ShaderMacro>& regirMacros, const ReGIRMode reGIRMode);
+    void createReGIRPipeline(const rtxdi::ReGIRStaticParameters& regirStaticParams, const std::vector<donut::engine::ShaderMacro>& regirMacros, const ReGIRType reGIRType);
     void createReSTIRDIPipelines(const std::vector<donut::engine::ShaderMacro>& regirMacros, bool useRayQuery);
     void createReSTIRGIPipelines(bool useRayQuery);
     void createGSGIPipelines(const std::vector<donut::engine::ShaderMacro>& regirMacros, bool useRayQuery);

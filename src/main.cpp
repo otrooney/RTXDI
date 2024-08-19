@@ -722,7 +722,7 @@ public:
         if (rtxdiResourcesCreated || m_ui.reloadShaders)
         {
             // Some RTXDI context settings affect the shader permutations
-            m_LightingPasses->CreatePipelines(m_ui.regirStaticParams, m_ui.useRayQuery, m_ui.lightingSettings.reGIRMode);
+            m_LightingPasses->CreatePipelines(m_ui.regirStaticParams, m_ui.useRayQuery, m_ui.lightingSettings.reGIRType);
         }
 
         m_ui.reloadShaders = false;

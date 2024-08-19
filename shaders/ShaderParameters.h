@@ -213,10 +213,10 @@ struct SceneConstants
     uint2 pad1;
 };
 
-struct DirReGIRConstants
-{
-    bool dirReGIRenabled;
-};
+//struct DirReGIRConstants
+//{
+//    bool dirReGIRenabled;
+//};
 
 struct ResamplingConstants
 {
@@ -257,7 +257,8 @@ struct ResamplingConstants
     uint2 localLightPdfTextureSize;
 
     GSGI_Parameters gsgi;
-    DirReGIRConstants dirReGIR;
+    //DirReGIRConstants dirReGIR;
+    bool dirReGIRenabled;
 };
 
 struct PerPassConstants

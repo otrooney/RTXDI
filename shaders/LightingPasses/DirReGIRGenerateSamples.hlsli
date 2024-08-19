@@ -3,7 +3,10 @@
 #include "RtxdiApplicationBridge.hlsli"
 
 #include <rtxdi/InitialSamplingFunctions.hlsli>
+#include <rtxdi/RtxdiParameters.h>
 //#include <rtxdi/ReGIRSampling.hlsli>
+
+#define INVALID_LIGHT_INDEX 0x40000000u
 
 
 // Sample a local light from the Directional ReGIR buffer using the surface BRDF
@@ -30,22 +33,35 @@ void SelectNextLocalLightWithDirectionalReGIR(
     
     uint bufferLocX = sampleDirOct.x * 32;
     uint bufferLocY = sampleDirOct.y * 32;
+    
+    
+    //uint bufferLocX = RAB_GetNextRandom(rng) * 32;
+    //uint bufferLocY = RAB_GetNextRandom(rng) * 32;
+    
     uint bufferIndex = (cellIndex * 32 * 32) + (bufferLocY * 32) + bufferLocX;
     
     uint2 tileData = u_DirReGIRBuffer[bufferIndex];
     lightIndex = tileData.x & RTXDI_LIGHT_INDEX_MASK;
     invSourcePdf = asfloat(tileData.y);
     
-    if ((tileData.x & RTXDI_LIGHT_COMPACT_BIT) != 0)
-    {
-        uint4 packedData1, packedData2;
-        packedData1 = u_DirReGIRLightDataBuffer[bufferIndex * 2 + 0];
-        packedData2 = u_DirReGIRLightDataBuffer[bufferIndex * 2 + 1];
-        lightInfo = unpackCompactLightInfo(packedData1, packedData2);
-    }
+    //if ((tileData.x & RTXDI_LIGHT_COMPACT_BIT) != 0)
+    //{
+    //    uint4 packedData1, packedData2;
+    //    packedData1 = u_DirReGIRLightDataBuffer[bufferIndex * 2 + 0];
+    //    packedData2 = u_DirReGIRLightDataBuffer[bufferIndex * 2 + 1];
+    //    lightInfo = unpackCompactLightInfo(packedData1, packedData2);
+    //}
+    //else
+    //{
+    //    lightInfo = RAB_LoadLightInfo(lightIndex, false);
+    //}
+    
+    if (lightIndex != INVALID_LIGHT_INDEX)
+        lightInfo = RAB_LoadLightInfo(lightIndex, false);
     else
     {
-        lightInfo = RAB_LoadLightInfo(lightIndex, false);
+        lightInfo = RAB_EmptyLightInfo();
+        lightIndex = 0;
     }
 }
 

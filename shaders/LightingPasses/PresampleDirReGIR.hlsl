@@ -5,9 +5,10 @@
 #include <rtxdi/PresamplingFunctions.hlsli>
 
 #define THREADS_PER_WORKGROUP 256
+#define INVALID_LIGHT_INDEX 0x40000000u
 
 groupshared float weightSumArray[32][32];
-groupshared int lightIndexArray[32][32];
+groupshared uint lightIndexArray[32][32];
 
 [numthreads(THREADS_PER_WORKGROUP, 1, 1)]
 void main(uint GlobalIndex : SV_DispatchThreadID)
@@ -23,7 +24,7 @@ void main(uint GlobalIndex : SV_DispatchThreadID)
         for (uint k = 0; k <= 1; k++)
         {
             weightSumArray[threadX + j][threadY + k] = 0;
-            lightIndexArray[threadX + j][threadY + k] = -1;
+            lightIndexArray[threadX + j][threadY + k] = INVALID_LIGHT_INDEX;
         }
     }
     
@@ -55,7 +56,7 @@ void main(uint GlobalIndex : SV_DispatchThreadID)
     else
         ctx = RTXDI_InitializeLocalLightSelectionContextUniform(g_Const.lightBufferParams.localLightBufferRegion);
 
-    for (uint i = 0; i < g_Const.regir.commonParams.numRegirBuildSamples; i++)
+    for (uint i = 0; i < g_Const.regir.commonParams.numRegirBuildSamples * 2; i++)
     {
         RAB_LightInfo lightInfo = RAB_EmptyLightInfo();
         uint rndLight;
@@ -104,24 +105,29 @@ void main(uint GlobalIndex : SV_DispatchThreadID)
     {
         for (uint b = 0; b <= 1; b++)
         {
+            uint bufferIndex = (cellIndex * 32 * 32) + ((threadY + b) * 32) + threadX + a;
             int lightIndex = lightIndexArray[threadX + a][threadY + b];
             RAB_LightInfo lightInfo = RAB_EmptyLightInfo();
-            if (lightIndex >= 0)
+            float targetPdf = 0;
+            float weight = 0;
+            
+            if (lightIndex != INVALID_LIGHT_INDEX)
+            {
                 lightInfo = RAB_LoadLightInfo(lightIndex, false);
-            
-            uint bufferIndex = (cellIndex * 32 * 32) + ((threadY + b) * 32) + threadX + a;
 
-            // As we don't have enough space to store the selected target PDF in shared memory, we recalculate here
-            float sampleX = cellCenter.x + (RAB_GetNextRandom(rng) - 1) * 2 * cellRadius;
-            float sampleY = cellCenter.y + (RAB_GetNextRandom(rng) - 1) * 2 * cellRadius;
-            float sampleZ = cellCenter.z + (RAB_GetNextRandom(rng) - 1) * 2 * cellRadius;
-            float3 samplePos = { sampleX, sampleY, sampleZ };
+                // As we don't have enough space to store the selected target PDF in shared memory, we recalculate here
+                float sampleX = cellCenter.x + (RAB_GetNextRandom(rng) - 1) * 2 * cellRadius;
+                float sampleY = cellCenter.y + (RAB_GetNextRandom(rng) - 1) * 2 * cellRadius;
+                float sampleZ = cellCenter.z + (RAB_GetNextRandom(rng) - 1) * 2 * cellRadius;
+                float3 samplePos = { sampleX, sampleY, sampleZ };
         
-            float2 randomUV = { RAB_GetNextRandom(rng), RAB_GetNextRandom(rng) };
-            PolymorphicLightSample pls = PolymorphicLight::calcSample(lightInfo, randomUV, samplePos, g_Const.gsgi.clampingRatio);
-            float targetPdf = calcLuminance(pls.radiance) / pls.solidAnglePdf;
+                float2 randomUV = { RAB_GetNextRandom(rng), RAB_GetNextRandom(rng) };
+                PolymorphicLightSample pls = PolymorphicLight::calcSample(lightInfo, randomUV, samplePos, g_Const.gsgi.clampingRatio);
+                targetPdf = calcLuminance(pls.radiance) / pls.solidAnglePdf;
             
-            float weight = (selectedTargetPdf > 0) ? weightSumArray[threadX + a][threadY + b] / targetPdf : 0;
+                weight = (targetPdf > 0) ? weightSumArray[threadX + a][threadY + b] / targetPdf : 0;
+            }
+            
             bool compact = false;
             
             if (weight > 0)

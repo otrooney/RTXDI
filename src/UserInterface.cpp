@@ -491,7 +491,7 @@ void UserInterface::SamplingSettings()
                     samplingSettingsChanged |= ImGui::RadioButton("Local Light ReGIR RIS", initSamplingMode, 2);
                     ShowHelpMarker("Sample local lights using ReGIR-based RIS");
 
-                    samplingSettingsChanged |= ImGui::Combo("ReGIR mode", (int*)&m_ui.lightingSettings.reGIRMode, "Standard\0Directional");
+                    samplingSettingsChanged |= ImGui::Combo("ReGIR mode", (int*)&m_ui.lightingSettings.reGIRType, "Standard\0Directional\0");
                     ShowHelpMarker("Use standard ReGIR-based RIS or Directional ReGIR-based RIS");
 
                     samplingSettingsChanged |= ImGui::SliderInt("Local Light ReGIR RIS Samples", (int*)&m_ui.restirDI.numLocalLightReGIRRISSamples, 0, 32);
