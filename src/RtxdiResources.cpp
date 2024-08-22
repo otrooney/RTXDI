@@ -87,7 +87,7 @@ RtxdiResources::RtxdiResources(
 
 
     nvrhi::BufferDesc dirReGIRBufferDesc;
-    dirReGIRBufferDesc.byteSize = sizeof(uint32_t) * 2 * std::max(reGIRCellCount * 32 * 32, 1u); // RG32_UINT per element
+    dirReGIRBufferDesc.byteSize = sizeof(uint32_t) * 2 * std::max(reGIRCellCount * 16 * 16, 1u); // RG32_UINT per element
     dirReGIRBufferDesc.format = nvrhi::Format::RG32_UINT;
     dirReGIRBufferDesc.canHaveTypedViews = true;
     dirReGIRBufferDesc.initialState = nvrhi::ResourceStates::ShaderResource;
@@ -96,7 +96,7 @@ RtxdiResources::RtxdiResources(
     dirReGIRBufferDesc.canHaveUAVs = true;
     DirReGIRBuffer = device->createBuffer(dirReGIRBufferDesc);
 
-    dirReGIRBufferDesc.byteSize = sizeof(uint32_t) * 8 * std::max(reGIRCellCount * 32 * 32, 1u); // RGBA32_UINT x 2 per element
+    dirReGIRBufferDesc.byteSize = sizeof(uint32_t) * 8 * std::max(reGIRCellCount * 16 * 16, 1u); // RGBA32_UINT x 2 per element
     dirReGIRBufferDesc.format = nvrhi::Format::RGBA32_UINT;
     dirReGIRBufferDesc.debugName = "DirReGIRLightDataBuffer";
     DirReGIRLightDataBuffer = device->createBuffer(dirReGIRBufferDesc);

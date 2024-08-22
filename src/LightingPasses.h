@@ -21,6 +21,7 @@
 #include <rtxdi/ReSTIRGIParameters.h>
 #include "../shaders/BRDFPTParameters.h"
 #include "../shaders/GSGIParameters.h"
+#include "../shaders/DirReGIRParameters.h"
 
 namespace donut::engine
 {
@@ -49,12 +50,6 @@ namespace nrd
 {
     struct HitDistanceParameters;
 }
-
-enum ReGIRType
-{
-    Standard,
-    Directional
-};
 
 // A 32-bit bool type to directly use from the command line parser.
 typedef int ibool;
@@ -143,6 +138,9 @@ public:
         float confidenceHistoryLength = 0.75f;
 
         ReGIRType reGIRType = ReGIRType::Standard;
+        DirReGIRSampling dirReGIRSampling = DirReGIRSampling::BRDF;
+        float dirReGIRBrdfDiffuseProbability = 0.25;
+        bool bypassDirectionalDirReGIRBuild = false;
 
         BRDFPathTracing_Parameters brdfptParams = getDefaultBRDFPathTracingParams();
         GSGI_Parameters gsgiParams = getDefaultGSGIParams();

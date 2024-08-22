@@ -509,6 +509,9 @@ void LightingPasses::FillResamplingConstants(
 
     constants.gsgi = lightingSettings.gsgiParams;
     constants.dirReGIRenabled = lightingSettings.reGIRType == ReGIRType::Directional;
+    constants.dirReGIRSampling = lightingSettings.dirReGIRSampling;
+    constants.dirReGIRBrdfDiffuseProbability = lightingSettings.dirReGIRBrdfDiffuseProbability;
+    constants.bypassDirectionalDirReGIRBuild = lightingSettings.bypassDirectionalDirReGIRBuild;
 
     m_CurrentFrameOutputReservoir = isContext.getReSTIRDIContext().getBufferIndices().shadingInputBufferIndex;
 }

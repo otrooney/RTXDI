@@ -460,6 +460,8 @@ void UserInterface::SamplingSettings()
                 m_ui.resetAccumulation |= ImGui::SliderFloat("Cell Size", &m_ui.regirDynamicParameters.regirCellSize, 0.1f, 4.f);
                 m_ui.resetAccumulation |= ImGui::SliderInt("Grid Build Samples", (int*)&m_ui.regirDynamicParameters.regirNumBuildSamples, 0, 32);
                 m_ui.resetAccumulation |= ImGui::SliderFloat("Sampling Jitter", &m_ui.regirDynamicParameters.regirSamplingJitter, 0.0f, 2.f);
+                ImGui::Checkbox("Non-directional DiReGIR (debug)", &m_ui.lightingSettings.bypassDirectionalDirReGIRBuild);
+                ShowHelpMarker("Ignore the directional component when building directional ReGIR cells");
 
                 ImGui::Checkbox("Freeze Position", &m_ui.freezeRegirPosition);
                 ImGui::SameLine(0.f, 10.f);
@@ -491,12 +493,22 @@ void UserInterface::SamplingSettings()
                     samplingSettingsChanged |= ImGui::RadioButton("Local Light ReGIR RIS", initSamplingMode, 2);
                     ShowHelpMarker("Sample local lights using ReGIR-based RIS");
 
-                    samplingSettingsChanged |= ImGui::Combo("ReGIR mode", (int*)&m_ui.lightingSettings.reGIRType, "Standard\0Directional\0");
+                    samplingSettingsChanged |= ImGui::Combo("ReGIR Mode", (int*)&m_ui.lightingSettings.reGIRType, "Standard\0Directional\0");
                     ShowHelpMarker("Use standard ReGIR-based RIS or Directional ReGIR-based RIS");
 
                     samplingSettingsChanged |= ImGui::SliderInt("Local Light ReGIR RIS Samples", (int*)&m_ui.restirDI.numLocalLightReGIRRISSamples, 0, 32);
-                    ShowHelpMarker(
-                        "Number of samples drawn from the local lights ReGIR-based RIS buffer");
+                    ShowHelpMarker("Number of samples drawn from the local lights ReGIR-based RIS buffer");
+
+                    if (m_ui.lightingSettings.reGIRType == Directional)
+                    {
+                        samplingSettingsChanged |= ImGui::Combo("DirReGIR Sampling", (int*)&m_ui.lightingSettings.dirReGIRSampling, "Uniform\0Diffuse\0BRDF\0");
+                        ShowHelpMarker("Sampling mode for Directional ReGIR-based RIS");
+                    }
+                    if (m_ui.lightingSettings.reGIRType == Directional && m_ui.lightingSettings.dirReGIRSampling == BRDF)
+                    {
+                        samplingSettingsChanged |= ImGui::SliderFloat("DirReGIR BRDF Min Diffuse Prob", &m_ui.lightingSettings.dirReGIRBrdfDiffuseProbability, 0.0, 1.0);
+                        ShowHelpMarker("Minimum probability of using a diffuse sample when using BRDF sampling for Directional ReGIR");
+                    }
 
                     static const char* regirFallbackOptions[] = { "Uniform Sampling", "Power RIS" };
                     const char* currentFallbackOption = regirFallbackOptions[static_cast<int>(m_ui.regirDynamicParameters.fallbackSamplingMode)];

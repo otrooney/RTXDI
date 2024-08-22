@@ -1,12 +1,40 @@
 #pragma pack_matrix(row_major)
 
 #include "RtxdiApplicationBridge.hlsli"
+#include "../DirReGIRParameters.h"
 
 #include <rtxdi/InitialSamplingFunctions.hlsli>
 #include <rtxdi/RtxdiParameters.h>
 //#include <rtxdi/ReGIRSampling.hlsli>
 
 #define INVALID_LIGHT_INDEX 0x40000000u
+
+
+bool GetSurfaceBrdfSample(RAB_Surface surface, float minDiffuseProbability, inout RAB_RandomSamplerState rng, inout float pdf, out float3 dir)
+{
+    float3 rand;
+    rand.x = RAB_GetNextRandom(rng);
+    rand.y = RAB_GetNextRandom(rng);
+    rand.z = RAB_GetNextRandom(rng);
+    if (rand.x < max(surface.diffuseProbability, minDiffuseProbability))
+    {
+        if (kSpecularOnly)
+            return false;
+
+        float3 h = SampleCosHemisphere(rand.yz, pdf);
+        dir = tangentToWorld(surface, h);
+    }
+    else
+    {
+        float3 Ve = normalize(worldToTangent(surface, surface.viewDir));
+        float3 h = ImportanceSampleGGX_VNDF(rand.yz, max(surface.roughness, kMinRoughness), Ve, 1.0);
+        h = normalize(h);
+        dir = reflect(-surface.viewDir, tangentToWorld(surface, h));
+        pdf = ImportanceSampleGGX_VNDF_PDF(max(surface.roughness, kMinRoughness), surface.normal, surface.viewDir, dir);
+    }
+
+    return dot(surface.normal, dir) > 0.f;
+}
 
 
 // Sample a local light from the Directional ReGIR buffer using the surface BRDF
@@ -18,27 +46,30 @@ void SelectNextLocalLightWithDirectionalReGIR(
     out uint lightIndex,
     out float invSourcePdf)
 {
-    //float3 worldPos = surface.worldPos;
-    //float3 normal = surface.normal;
-    //int cellIndex = RTXDI_ReGIR_WorldPosToCellIndex(g_Const.regir, worldPos);
+    uint2 bufferLoc;
+    float pdf;
     
-    //float pdf;
-    //float2 randxy = { RAB_GetNextRandom(rng), RAB_GetNextRandom(rng) };
-    //float3 h = SampleCosHemisphere(randxy, pdf);
-    //float3 sampleDir = tangentToWorld(surface, h);
+    if (g_Const.dirReGIRSampling == DirReGIRSampling::Uniform)
+    {
+        bufferLoc.x = RAB_GetNextRandom(rng) * 16;
+        bufferLoc.y = RAB_GetNextRandom(rng) * 16;
+        pdf = 1.0;
+    }
+    else
+    {
+        float minDiffuseProbability = 1.0;
+        if (g_Const.dirReGIRSampling == DirReGIRSampling::BRDF)
+            minDiffuseProbability = g_Const.dirReGIRBrdfDiffuseProbability;
+        
+        float3 sampleDir;
+        GetSurfaceBrdfSample(surface, minDiffuseProbability, rng, pdf, sampleDir);
+        float2 sampleDirOct = ndirToOctSigned(sampleDir);
+        sampleDirOct = (sampleDirOct + 1) / 2;
+        
+        bufferLoc = sampleDirOct * 16;
+    }
     
-    float3 sampleDir;
-    RAB_GetSurfaceBrdfSample(surface, rng, sampleDir);
-    float2 sampleDirOct = ndirToOctSigned(sampleDir);
-    
-    uint bufferLocX = sampleDirOct.x * 32;
-    uint bufferLocY = sampleDirOct.y * 32;
-    
-    
-    //uint bufferLocX = RAB_GetNextRandom(rng) * 32;
-    //uint bufferLocY = RAB_GetNextRandom(rng) * 32;
-    
-    uint bufferIndex = (cellIndex * 32 * 32) + (bufferLocY * 32) + bufferLocX;
+    uint bufferIndex = (cellIndex * 16 * 16) + (bufferLoc.y * 16) + bufferLoc.x;
     
     uint2 tileData = u_DirReGIRBuffer[bufferIndex];
     lightIndex = tileData.x & RTXDI_LIGHT_INDEX_MASK;
@@ -79,7 +110,7 @@ RTXDI_DIReservoir SampleLocalLightsWithDirectionalReGIRInternal(
     RTXDI_DIReservoir state = RTXDI_EmptyDIReservoir();
     
     RTXDI_LocalLightSelectionContext fallbackCtx;
-    int cellIndex = RTXDI_CalculateReGIRCellIndex(coherentRng, regirParams, surface);
+    int cellIndex = RTXDI_CalculateReGIRCellIndex(rng, regirParams, surface);
     
     if (regirParams.commonParams.localLightSamplingFallbackMode == ReSTIRDI_LocalLightSamplingMode_POWER_RIS)
         fallbackCtx = RTXDI_InitializeLocalLightSelectionContextRIS(coherentRng, localLightRISBufferSegmentParams);

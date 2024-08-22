@@ -20,6 +20,7 @@
 
 #include "BRDFPTParameters.h"
 #include "GSGIParameters.h"
+#include "DirReGIRParameters.h"
 
 #define TASK_PRIMITIVE_LIGHT_BIT 0x80000000u
 #define TASK_VIRTUAL_LIGHT_BIT 0x40000000u
@@ -213,11 +214,6 @@ struct SceneConstants
     uint2 pad1;
 };
 
-//struct DirReGIRConstants
-//{
-//    bool dirReGIRenabled;
-//};
-
 struct ResamplingConstants
 {
     PlanarViewConstants view;
@@ -257,8 +253,10 @@ struct ResamplingConstants
     uint2 localLightPdfTextureSize;
 
     GSGI_Parameters gsgi;
-    //DirReGIRConstants dirReGIR;
     bool dirReGIRenabled;
+    DirReGIRSampling dirReGIRSampling;
+    float dirReGIRBrdfDiffuseProbability;
+    bool bypassDirectionalDirReGIRBuild;
 };
 
 struct PerPassConstants
