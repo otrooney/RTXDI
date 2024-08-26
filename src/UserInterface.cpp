@@ -501,7 +501,7 @@ void UserInterface::SamplingSettings()
 
                     if (m_ui.lightingSettings.reGIRType == Directional)
                     {
-                        samplingSettingsChanged |= ImGui::Combo("DirReGIR Sampling", (int*)&m_ui.lightingSettings.dirReGIRSampling, "Uniform\0Diffuse\0BRDF\0");
+                        samplingSettingsChanged |= ImGui::Combo("DirReGIR Sampling", (int*)&m_ui.lightingSettings.dirReGIRSampling, "Uniform\0UniformHemisphere\0Diffuse\0BRDF\0");
                         ShowHelpMarker("Sampling mode for Directional ReGIR-based RIS");
                     }
                     if (m_ui.lightingSettings.reGIRType == Directional && m_ui.lightingSettings.dirReGIRSampling == BRDF)

@@ -49,6 +49,19 @@ void SelectNextLocalLightWithDirectionalReGIR(
         bufferLoc.x = RAB_GetNextRandom(rng) * 16;
         bufferLoc.y = RAB_GetNextRandom(rng) * 16;
     }
+    else if (g_Const.dirReGIRSampling == DirReGIRSampling::UniformHemisphere)
+    {
+        float2 randxy = { RAB_GetNextRandom(rng), RAB_GetNextRandom(rng) };
+        float solidAnglePdf;
+        float3 tangentDir = sampleSphere(randxy, solidAnglePdf);
+        tangentDir.z = abs(tangentDir.z);
+        
+        float3 sampleDir = tangentToWorld(surface, tangentDir);
+        float2 sampleDirOct = ndirToOctSigned(sampleDir);
+        sampleDirOct = (sampleDirOct + 1) / 2;
+        
+        bufferLoc = sampleDirOct * 16;
+    }
     else
     {
         float minDiffuseProbability = 1.0;

@@ -12,6 +12,7 @@ enum ReGIRType
 enum DirReGIRSampling
 {
     Uniform,
+    UniformHemisphere,
     Diffuse,
     BRDF
 };
