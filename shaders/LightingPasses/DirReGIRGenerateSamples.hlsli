@@ -9,31 +9,66 @@
 #define INVALID_LIGHT_INDEX 0x40000000u
 
 
-bool GetSurfaceBrdfSample(RAB_Surface surface, float minDiffuseProbability, inout RAB_RandomSamplerState rng, out float3 dir)
+uint2 GetUniformSample(inout RAB_RandomSamplerState rng)
 {
-    float3 rand;
-    rand.x = RAB_GetNextRandom(rng);
-    rand.y = RAB_GetNextRandom(rng);
-    rand.z = RAB_GetNextRandom(rng);
-    if (rand.x < max(surface.diffuseProbability, minDiffuseProbability))
-    {
-        float pdf;
-        float3 h = SampleCosHemisphere(rand.yz, pdf);
-        dir = tangentToWorld(surface, h);
-    }
-    else
-    {
-        float3 Ve = normalize(worldToTangent(surface, surface.viewDir));
-        float3 h = ImportanceSampleGGX_VNDF(rand.yz, max(surface.roughness, kMinRoughness), Ve, 1.0);
-        h = normalize(h);
-        dir = reflect(-surface.viewDir, tangentToWorld(surface, h));
-    }
-
-    return dot(surface.normal, dir) > 0.f;
+    uint2 bufferLoc;
+    bufferLoc.x = RAB_GetNextRandom(rng) * 16;
+    bufferLoc.y = RAB_GetNextRandom(rng) * 16;
+    return bufferLoc;
 }
 
+uint2 SampleDirToBufferLoc(float3 sampleDir)
+{
+    float2 sampleDirOct = ndirToOctSigned(sampleDir);
+    sampleDirOct = (sampleDirOct + 1) / 2;
+        
+    uint2 bufferLoc = sampleDirOct * 16;
+    return bufferLoc;
+}
 
-// Sample a local light from the Directional ReGIR buffer using the surface BRDF
+uint2 GetUniformHemisphereSample(RAB_Surface surface, inout RAB_RandomSamplerState rng)
+{
+    float2 randxy = { RAB_GetNextRandom(rng), RAB_GetNextRandom(rng) };
+    float solidAnglePdf;
+    float3 tangentDir = sampleSphere(randxy, solidAnglePdf);
+    tangentDir.z = abs(tangentDir.z);
+    
+    float3 sampleDir = tangentToWorld(surface, tangentDir);
+    return SampleDirToBufferLoc(sampleDir);
+}
+
+uint2 GetDiffuseSample(RAB_Surface surface, inout RAB_RandomSamplerState rng)
+{
+    float2 randxy = { RAB_GetNextRandom(rng), RAB_GetNextRandom(rng) };
+    float pdf;
+    float3 h = SampleCosHemisphere(randxy, pdf);
+    
+    float3 sampleDir = tangentToWorld(surface, h);
+    return SampleDirToBufferLoc(sampleDir);
+}
+
+uint2 GetSpecularSample(RAB_Surface surface, inout RAB_RandomSamplerState rng)
+{
+    float2 randxy = { RAB_GetNextRandom(rng), RAB_GetNextRandom(rng) };
+    float3 Ve = normalize(worldToTangent(surface, surface.viewDir));
+    float3 h = ImportanceSampleGGX_VNDF(randxy, max(surface.roughness, kMinRoughness), Ve, 1.0);
+    h = normalize(h);
+    float3 sampleDir = reflect(-surface.viewDir, tangentToWorld(surface, h));
+    
+    return SampleDirToBufferLoc(sampleDir);
+}
+
+uint2 GetBrdfSample(RAB_Surface surface, float uniformProbability, inout RAB_RandomSamplerState rng)
+{
+    float rand = RAB_GetNextRandom(rng);
+    if (rand < uniformProbability)
+        return GetUniformHemisphereSample(surface, rng);
+    else if (rand < uniformProbability + surface.diffuseProbability * (1 - uniformProbability))
+        return GetDiffuseSample(surface, rng);
+    return GetSpecularSample(surface, rng);
+}
+
+// Sample a local light from the Directional ReGIR buffer
 void SelectNextLocalLightWithDirectionalReGIR(
     RAB_Surface surface,
     int cellIndex,
@@ -44,36 +79,19 @@ void SelectNextLocalLightWithDirectionalReGIR(
 {
     uint2 bufferLoc;
     
-    if (g_Const.dirReGIRSampling == DirReGIRSampling::Uniform)
+    switch (g_Const.dirReGIRSampling)
     {
-        bufferLoc.x = RAB_GetNextRandom(rng) * 16;
-        bufferLoc.y = RAB_GetNextRandom(rng) * 16;
-    }
-    else if (g_Const.dirReGIRSampling == DirReGIRSampling::UniformHemisphere)
-    {
-        float2 randxy = { RAB_GetNextRandom(rng), RAB_GetNextRandom(rng) };
-        float solidAnglePdf;
-        float3 tangentDir = sampleSphere(randxy, solidAnglePdf);
-        tangentDir.z = abs(tangentDir.z);
-        
-        float3 sampleDir = tangentToWorld(surface, tangentDir);
-        float2 sampleDirOct = ndirToOctSigned(sampleDir);
-        sampleDirOct = (sampleDirOct + 1) / 2;
-        
-        bufferLoc = sampleDirOct * 16;
-    }
-    else
-    {
-        float minDiffuseProbability = 1.0;
-        if (g_Const.dirReGIRSampling == DirReGIRSampling::BRDF)
-            minDiffuseProbability = g_Const.dirReGIRBrdfDiffuseProbability;
-        
-        float3 sampleDir;
-        GetSurfaceBrdfSample(surface, minDiffuseProbability, rng, sampleDir);
-        float2 sampleDirOct = ndirToOctSigned(sampleDir);
-        sampleDirOct = (sampleDirOct + 1) / 2;
-        
-        bufferLoc = sampleDirOct * 16;
+        case DirReGIRSampling::Uniform:
+            bufferLoc = GetUniformSample(rng);
+            break;
+        case DirReGIRSampling::UniformHemisphere:
+            bufferLoc = GetUniformHemisphereSample(surface, rng);
+            break;
+        case DirReGIRSampling::Diffuse:
+            bufferLoc = GetDiffuseSample(surface, rng);
+            break;
+        case DirReGIRSampling::BRDF:
+            bufferLoc = GetBrdfSample(surface, g_Const.dirReGIRBrdfUniformProbability, rng);
     }
     
     uint bufferIndex = (cellIndex * 16 * 16) + (bufferLoc.y * 16) + bufferLoc.x;

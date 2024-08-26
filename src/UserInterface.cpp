@@ -506,8 +506,8 @@ void UserInterface::SamplingSettings()
                     }
                     if (m_ui.lightingSettings.reGIRType == Directional && m_ui.lightingSettings.dirReGIRSampling == BRDF)
                     {
-                        samplingSettingsChanged |= ImGui::SliderFloat("DirReGIR BRDF Min Diffuse Prob", &m_ui.lightingSettings.dirReGIRBrdfDiffuseProbability, 0.0, 1.0);
-                        ShowHelpMarker("Minimum probability of using a diffuse sample when using BRDF sampling for Directional ReGIR");
+                        samplingSettingsChanged |= ImGui::SliderFloat("DirReGIR BRDF Uniform Sample Ratio", &m_ui.lightingSettings.dirReGIRBrdfUniformProbability, 0.0, 1.0);
+                        ShowHelpMarker("Ratio of uniform hemispherical samples to include when using BRDF sampling for Directional ReGIR");
                     }
 
                     static const char* regirFallbackOptions[] = { "Uniform Sampling", "Power RIS" };

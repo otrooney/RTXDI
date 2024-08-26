@@ -139,7 +139,7 @@ public:
 
         ReGIRType reGIRType = ReGIRType::Standard;
         DirReGIRSampling dirReGIRSampling = DirReGIRSampling::BRDF;
-        float dirReGIRBrdfDiffuseProbability = 0.25;
+        float dirReGIRBrdfUniformProbability = 0.25;
         bool bypassDirectionalDirReGIRBuild = false;
 
         BRDFPathTracing_Parameters brdfptParams = getDefaultBRDFPathTracingParams();

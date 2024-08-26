@@ -255,7 +255,7 @@ struct ResamplingConstants
     GSGI_Parameters gsgi;
     bool dirReGIRenabled;
     DirReGIRSampling dirReGIRSampling;
-    float dirReGIRBrdfDiffuseProbability;
+    float dirReGIRBrdfUniformProbability;
     bool bypassDirectionalDirReGIRBuild;
 };
 
