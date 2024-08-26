@@ -55,7 +55,7 @@ void RayGen()
 #if RTXDI_REGIR_MODE != RTXDI_REGIR_MODE_DISABLED
     RTXDI_DIReservoir reservoir = RTXDI_EmptyDIReservoir();
     
-    if (g_Const.dirReGIRenabled)
+    if (g_Const.dirReGIRenabled && g_Const.restirDI.initialSamplingParams.localLightSamplingMode == 2) // 2 = ReGIR_RIS
     {
         reservoir = SampleLightsForSurfaceWithDirectionalReGIR(rng, tileRng, surface,
             sampleParams, g_Const.lightBufferParams, g_Const.restirDI.initialSamplingParams.localLightSamplingMode,

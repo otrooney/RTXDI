@@ -562,21 +562,21 @@ void LightingPasses::PrepareForLightSampling(
     if (isContext.isReGIREnabled() &&
         lightBufferParams.localLightBufferRegion.numLights > 0)
     {
-        //if (localSettings.reGIRType == Standard)
-        //{
+        if (localSettings.reGIRType == Standard)
+        {
             dm::int2 worldGridDispatchSize = {
                 dm::div_ceil(regirContext.getReGIRLightSlotCount(), RTXDI_GRID_BUILD_GROUP_SIZE),
                 1
             };
 
             ExecuteComputePass(commandList, m_PresampleReGIR, "PresampleReGIR", worldGridDispatchSize, ProfilerSection::PresampleReGIR);
-        //}
-        //else
-        //{
+        }
+        else
+        {
             int reGIRCellCount = regirContext.getReGIRLightSlotCount() / regirContext.getReGIRStaticParameters().LightsPerCell;
             dm::int2 dirReGIRDispatchSize = {reGIRCellCount, 1};
             ExecuteComputePass(commandList, m_PresampleDirReGIR, "PresampleDirReGIR", dirReGIRDispatchSize, ProfilerSection::PresampleDirReGIR);
-        //}
+        }
     }
 }
 
