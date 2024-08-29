@@ -31,4 +31,15 @@ struct GSGI_Parameters
     uint32_t lockLights;
 };
 
-#endif // RTXDI_BRDFPT_PARAMETERS_H
+struct PMGI_Parameters
+{
+    uint32_t samplesPerFrame;
+    uint32_t sampleLifespan;
+    float scalingFactor;
+    float lightSize;
+    float clampingDistance;
+    VirtualLightContribution virtualLightContribution;
+    uint32_t lockLights;
+};
+
+#endif // RTXDI_GSGI_PARAMETERS_H

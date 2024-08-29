@@ -73,27 +73,27 @@ bool FindTask(uint dispatchThreadId, out PrepareLightsTask task)
 [numthreads(256, 1, 1)]
 void main(uint dispatchThreadId : SV_DispatchThreadID, uint groupThreadId : SV_GroupThreadID)
 {
-    if (g_Const.GSGIEnabled && dispatchThreadId < g_Const.GSGISamplesPerFrame)
+    if (g_Const.virtualLightsEnabled && dispatchThreadId < g_Const.virtualLightsSamplesPerFrame)
     {
         uint virtualLightIndex = dispatchThreadId;
         
         // Each block contains lights from one frame. We iterate through them and update this index in each.
-        for (uint blockIndex = 0; blockIndex < g_Const.GSGISampleLifespan; blockIndex++)
+        for (uint blockIndex = 0; blockIndex < g_Const.virtualLightsSampleLifespan; blockIndex++)
         {
-            uint blockOffset = blockIndex * g_Const.GSGISamplesPerFrame;
+            uint blockOffset = blockIndex * g_Const.virtualLightsSamplesPerFrame;
             uint lightBufferPtr = blockOffset + virtualLightIndex;
             int prevBufferPtr = lightBufferPtr;
             
             PolymorphicLightInfo lightInfo = (PolymorphicLightInfo) 0;
             
-            if ((blockIndex == g_Const.GSGICurrentFrameBlock) && !g_Const.GSGILockLights)
+            if ((blockIndex == g_Const.virtualLightsCurrentFrameBlock) && !g_Const.lockVirtualLights)
             {
                 // If we're in the block for the current frame, grab the light from the virtual lights buffer
                 lightInfo = t_VirtualLights[virtualLightIndex];
                 prevBufferPtr = -1;
                 u_LightDataBuffer[g_Const.currentFrameLightOffset + lightBufferPtr] = lightInfo;
             }
-            else if (blockIndex == g_Const.GSGIPreviousFrameBlock)
+            else if (blockIndex == g_Const.virtualLightsPreviousFrameBlock)
             {
                 // If it's from the previous frame, we need to copy it over from that section of the light buffer
                 lightInfo = u_LightDataBuffer[g_Const.previousFrameLightOffset + prevBufferPtr];

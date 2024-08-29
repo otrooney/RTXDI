@@ -91,6 +91,19 @@ GSGI_Parameters getDefaultGSGIParams()
     return params;
 }
 
+PMGI_Parameters getDefaultPMGIParams()
+{
+    PMGI_Parameters params;
+    params.samplesPerFrame = 65536;
+    params.sampleLifespan = 8;
+    params.scalingFactor = 0.5f;
+    params.lightSize = 0.01f;
+    params.clampingDistance = 0.1f;
+    params.virtualLightContribution = DiffuseAndSpecular;
+    params.lockLights = false;
+    return params;
+}
+
 LightingPasses::LightingPasses(
     nvrhi::IDevice* device, 
     std::shared_ptr<ShaderFactory> shaderFactory,
@@ -351,6 +364,11 @@ void LightingPasses::createGSGIPipelines(const std::vector<donut::engine::Shader
     m_GSGICreateLightsPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGICreateLights.hlsl", {}, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
 }
 
+void LightingPasses::createPMGIPipelines(bool useRayQuery)
+{
+    m_PMGICreateLightsPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/PMGICreateLights.hlsl", {}, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
+}
+
 void LightingPasses::createReSTIRDIPipelines(const std::vector<donut::engine::ShaderMacro>& regirMacros, bool useRayQuery)
 {
     m_GenerateInitialSamplesPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/DIGenerateInitialSamples.hlsl", regirMacros, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
@@ -382,6 +400,7 @@ void LightingPasses::CreatePipelines(const rtxdi::ReGIRStaticParameters& regirSt
     createReSTIRDIPipelines(regirMacros, useRayQuery);
     createReSTIRGIPipelines(useRayQuery);
     createGSGIPipelines(regirMacros, useRayQuery);
+    createPMGIPipelines(useRayQuery);
 }
 
 #if WITH_NRD
@@ -508,6 +527,7 @@ void LightingPasses::FillResamplingConstants(
     }
 
     constants.gsgi = lightingSettings.gsgiParams;
+    constants.pmgi = lightingSettings.pmgiParams;
     constants.dirReGIRenabled = lightingSettings.reGIRType == ReGIRType::Directional;
     constants.dirReGIRSampling = lightingSettings.dirReGIRSampling;
     constants.dirReGIRBrdfUniformProbability = lightingSettings.dirReGIRBrdfUniformProbability;
@@ -589,9 +609,6 @@ void LightingPasses::GenerateGSGILights(
 {
     rtxdi::ReGIRContext& regirContext = isContext.getReGIRContext();
 
-    uint32_t lightBufferSize = localSettings.gsgiParams.sampleLifespan * localSettings.gsgiParams.samplesPerFrame;
-    uint32_t lightBufferOffset = (context.getFrameIndex() % localSettings.gsgiParams.sampleLifespan) * localSettings.gsgiParams.samplesPerFrame;
-
     dm::int2 dispatchSize = {
         static_cast<int>(localSettings.gsgiParams.samplesPerFrame),
         1
@@ -626,6 +643,21 @@ void LightingPasses::GenerateGSGILights(
     }
 
     ExecuteRayTracingPass(commandList, m_GSGICreateLightsPass, localSettings.enableRayCounts, "GSGICreateLights", dispatchSize, ProfilerSection::GSGICreateLights);
+}
+
+void LightingPasses::GeneratePMGILights(
+    nvrhi::ICommandList* commandList,
+    rtxdi::ReSTIRDIContext& context,
+    rtxdi::ImportanceSamplingContext& isContext,
+    const donut::engine::IView& view,
+    const RenderSettings& localSettings)
+{
+    dm::int2 dispatchSize = {
+        static_cast<int>(localSettings.pmgiParams.samplesPerFrame),
+        1
+    };
+
+    ExecuteRayTracingPass(commandList, m_PMGICreateLightsPass, localSettings.enableRayCounts, "PMGICreateLights", dispatchSize, ProfilerSection::PMGICreateLights);
 }
 
 void LightingPasses::RenderDirectLighting(

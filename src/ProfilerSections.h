@@ -38,6 +38,7 @@ struct ProfilerSection
         GSGIWorldSpaceResampling,
         GSGIScreenSpaceResampling,
         GSGICreateLights,
+        PMGICreateLights,
         Gradients,
         Denoising,
         Glass,

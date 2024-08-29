@@ -606,7 +606,25 @@ public:
         
         uint2 environmentMapSize = uint2(environmentMap->getDesc().width, environmentMap->getDesc().height);
 
+        bool enableGSGIPass = m_ui.indirectLightingMode == IndirectLightingMode::GSGI;
+        bool enablePMGIPass = m_ui.indirectLightingMode == IndirectLightingMode::PMGI;
+
         GSGI_Parameters gsgiSettings = m_ui.lightingSettings.gsgiParams;
+        PMGI_Parameters pmgiSettings = m_ui.lightingSettings.pmgiParams;
+
+        uint32_t virtualLightSamplesPerFrame;
+        uint32_t virtualLightSampleLifespan;
+
+        if (enablePMGIPass)
+        {
+            virtualLightSamplesPerFrame = pmgiSettings.samplesPerFrame;
+            virtualLightSampleLifespan = pmgiSettings.sampleLifespan;
+        }
+        else
+        {
+            virtualLightSamplesPerFrame = gsgiSettings.samplesPerFrame;
+            virtualLightSampleLifespan = gsgiSettings.sampleLifespan;
+        }
 
         if (m_RtxdiResources && (
             environmentMapSize.x != m_RtxdiResources->EnvironmentPdfTexture->getDesc().width ||
@@ -615,8 +633,8 @@ public:
             numEmissiveTriangles > m_RtxdiResources->GetMaxEmissiveTriangles() || 
             numPrimitiveLights > m_RtxdiResources->GetMaxPrimitiveLights() ||
             numGeometryInstances > m_RtxdiResources->GetMaxGeometryInstances() ||
-            gsgiSettings.samplesPerFrame != m_RtxdiResources->GetGSGIsamplesPerFrame() ||
-            gsgiSettings.sampleLifespan != m_RtxdiResources->GetGSGIsampleLifespan()))
+            virtualLightSamplesPerFrame != m_RtxdiResources->GetVirtualLightSamplesPerFrame() ||
+            virtualLightSampleLifespan != m_RtxdiResources->GetVirtualLightSampleLifespan()))
         {
             m_RtxdiResources = nullptr;
         }
@@ -680,8 +698,8 @@ public:
                 numGeometryInstances,
                 environmentMapSize.x,
                 environmentMapSize.y,
-                gsgiSettings.samplesPerFrame,
-                gsgiSettings.sampleLifespan,
+                virtualLightSamplesPerFrame,
+                virtualLightSampleLifespan,
                 reGIRCellCount);
 
             m_PrepareLightsPass->CreateBindingSet(*m_RtxdiResources);
@@ -1153,6 +1171,25 @@ public:
         m_isContext->getReSTIRGIContext().setFrameIndex(effectiveFrameIndex);
 
         bool enableGSGIPass = m_ui.indirectLightingMode == IndirectLightingMode::GSGI;
+        bool enablePMGIPass = m_ui.indirectLightingMode == IndirectLightingMode::PMGI;
+        bool enableVirtualLights = enableGSGIPass || enablePMGIPass;
+
+        uint32_t virtualLightsSamplesPerFrame;
+        uint32_t virtualLightsSampleLifespan;
+        bool lockVirtualLights;
+
+        if (enablePMGIPass)
+        {
+            virtualLightsSamplesPerFrame = m_ui.lightingSettings.pmgiParams.samplesPerFrame;
+            virtualLightsSampleLifespan = m_ui.lightingSettings.pmgiParams.sampleLifespan;
+            lockVirtualLights = m_ui.lightingSettings.pmgiParams.lockLights;
+        }
+        else
+        {
+            virtualLightsSamplesPerFrame = m_ui.lightingSettings.gsgiParams.samplesPerFrame;
+            virtualLightsSampleLifespan = m_ui.lightingSettings.gsgiParams.sampleLifespan;
+            lockVirtualLights = m_ui.lightingSettings.gsgiParams.lockLights;
+        }
 
         {
             ProfilerScope scope(*m_Profiler, m_CommandList, ProfilerSection::MeshProcessing);
@@ -1162,8 +1199,10 @@ public:
                 restirDIContext,
                 m_Scene->GetSceneGraph()->GetLights(),
                 m_EnvironmentMapPdfMipmapPass != nullptr && m_ui.environmentMapImportanceSampling,
-                enableGSGIPass,
-                m_ui.lightingSettings.gsgiParams);
+                enableVirtualLights,
+                virtualLightsSamplesPerFrame,
+                virtualLightsSampleLifespan,
+                lockVirtualLights);
             m_isContext->setLightBufferParams(lightBufferParams);
 
             auto initialSamplingParams = restirDIContext.getInitialSamplingParameters();
@@ -1258,8 +1297,16 @@ public:
 
         if (enableGSGIPass)
         {
-            // Do GSGI stuff here
             m_LightingPasses->GenerateGSGILights(m_CommandList,
+                restirDIContext,
+                *m_isContext,
+                m_View,
+                lightingSettings);
+        }
+
+        else if (enablePMGIPass)
+        {
+            m_LightingPasses->GeneratePMGILights(m_CommandList,
                 restirDIContext,
                 *m_isContext,
                 m_View,

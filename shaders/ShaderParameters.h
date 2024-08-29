@@ -78,12 +78,12 @@ struct PrepareLightsConstants
     uint numTasks;
     uint currentFrameLightOffset;
     uint previousFrameLightOffset;
-    uint GSGIEnabled;
-    uint GSGICurrentFrameBlock;
-    uint GSGIPreviousFrameBlock;
-    uint GSGISamplesPerFrame;
-    uint GSGISampleLifespan;
-    uint GSGILockLights;
+    uint virtualLightsEnabled;
+    uint virtualLightsCurrentFrameBlock;
+    uint virtualLightsPreviousFrameBlock;
+    uint virtualLightsSamplesPerFrame;
+    uint virtualLightsSampleLifespan;
+    uint lockVirtualLights;
 };
 
 struct PrepareLightsTask
@@ -253,6 +253,7 @@ struct ResamplingConstants
     uint2 localLightPdfTextureSize;
 
     GSGI_Parameters gsgi;
+    PMGI_Parameters pmgi;
     bool dirReGIRenabled;
     DirReGIRSampling dirReGIRSampling;
     float dirReGIRBrdfUniformProbability;
@@ -289,6 +290,17 @@ struct GSGIGBufferData
 
     float rSampleDensity;
     float sumOfWeights;
+};
+
+struct PMGIGBufferData
+{
+    float3 worldPos;
+
+    uint diffuseAlbedo;         // R11G11B10_UFLOAT
+    float3 normal;
+
+    uint lightIndex;
+    float3 lightPos;
 };
 
 static const uint kSecondaryGBuffer_IsSpecularRay = 1;

@@ -58,6 +58,7 @@ BRDFPathTracing_MaterialOverrideParameters getDefaultBRDFPathTracingMaterialOver
 BRDFPathTracing_SecondarySurfaceReSTIRDIParameters getDefaultBRDFPathTracingSecondarySurfaceReSTIRDIParams();
 BRDFPathTracing_Parameters getDefaultBRDFPathTracingParams();
 GSGI_Parameters getDefaultGSGIParams();
+PMGI_Parameters getDefaultPMGIParams();
 
 class LightingPasses
 {
@@ -92,6 +93,7 @@ private:
     RayTracingPass m_GSGIWorldSpaceResamplingPass;
     RayTracingPass m_GSGIScreenSpaceResamplingPass;
     RayTracingPass m_GSGICreateLightsPass;
+    RayTracingPass m_PMGICreateLightsPass;
     nvrhi::BindingLayoutHandle m_BindingLayout;
     nvrhi::BindingLayoutHandle m_BindlessLayout;
     nvrhi::BindingSetHandle m_BindingSet;
@@ -144,6 +146,7 @@ public:
 
         BRDFPathTracing_Parameters brdfptParams = getDefaultBRDFPathTracingParams();
         GSGI_Parameters gsgiParams = getDefaultGSGIParams();
+        PMGI_Parameters pmgiParams = getDefaultPMGIParams();
         
 #if WITH_NRD
         const nrd::HitDistanceParameters* reblurDiffHitDistanceParams = nullptr;
@@ -176,6 +179,13 @@ public:
         bool enableAccumulation);
 
     void GenerateGSGILights(
+        nvrhi::ICommandList* commandList,
+        rtxdi::ReSTIRDIContext& context,
+        rtxdi::ImportanceSamplingContext& isContext,
+        const donut::engine::IView& view,
+        const RenderSettings& localSettings);
+
+    void GeneratePMGILights(
         nvrhi::ICommandList* commandList,
         rtxdi::ReSTIRDIContext& context,
         rtxdi::ImportanceSamplingContext& isContext,
@@ -223,4 +233,5 @@ private:
     void createReSTIRDIPipelines(const std::vector<donut::engine::ShaderMacro>& regirMacros, bool useRayQuery);
     void createReSTIRGIPipelines(bool useRayQuery);
     void createGSGIPipelines(const std::vector<donut::engine::ShaderMacro>& regirMacros, bool useRayQuery);
+    void createPMGIPipelines(bool useRayQuery);
 };

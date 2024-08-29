@@ -74,5 +74,7 @@ public:
         const std::vector<std::shared_ptr<donut::engine::Light>>& sceneLights,
         bool enableImportanceSampledEnvironmentLight,
         bool enableGSGIVirtualLights,
-        GSGI_Parameters gsgiParams);
+        uint32_t virtualLightsSamplesPerFrame,
+        uint32_t virtualLightsSampleLifespan,
+        bool lockVirtualLights);
 };

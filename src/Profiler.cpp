@@ -41,6 +41,7 @@ static const char* g_SectionNames[ProfilerSection::Count] = {
     "GSGI - World Space Resampling",
     "GSGI - Screen Space Resampling",
     "GSGI - Create Lights",
+    "PMGI - Create Lights",
     "Gradients",
     "Denoising",
     "Glass",

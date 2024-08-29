@@ -28,18 +28,18 @@ RtxdiResources::RtxdiResources(
     uint32_t maxGeometryInstances,
     uint32_t environmentMapWidth,
     uint32_t environmentMapHeight,
-    uint32_t GSGIsamplesPerFrame,
-    uint32_t GSGIsampleLifespan,
+    uint32_t virtualLightSamplesPerFrame,
+    uint32_t virtualLightSampleLifespan,
     uint32_t reGIRCellCount)
     : m_MaxEmissiveMeshes(maxEmissiveMeshes)
     , m_MaxEmissiveTriangles(maxEmissiveTriangles)
     , m_MaxPrimitiveLights(maxPrimitiveLights)
     , m_MaxGeometryInstances(maxGeometryInstances)
 {
-    m_GSGIsamplesPerFrame = GSGIsamplesPerFrame;
-    m_GSGIsampleLifespan = GSGIsampleLifespan;
+    m_VirtualLightSamplesPerFrame = virtualLightSamplesPerFrame;
+    m_VirtualLightSampleLifespan = virtualLightSampleLifespan;
 
-    uint32_t maxVirtualLights = m_GSGIsamplesPerFrame * m_GSGIsampleLifespan;
+    uint32_t maxVirtualLights = m_VirtualLightSamplesPerFrame * m_VirtualLightSampleLifespan;
 
     nvrhi::BufferDesc taskBufferDesc;
     taskBufferDesc.byteSize = sizeof(PrepareLightsTask) * (maxEmissiveMeshes + maxPrimitiveLights + maxVirtualLights);
@@ -61,7 +61,7 @@ RtxdiResources::RtxdiResources(
 
 
     nvrhi::BufferDesc virtualLightBufferDesc;
-    virtualLightBufferDesc.byteSize = sizeof(PolymorphicLightInfo) * GSGIsamplesPerFrame;
+    virtualLightBufferDesc.byteSize = sizeof(PolymorphicLightInfo) * m_VirtualLightSamplesPerFrame;
     virtualLightBufferDesc.structStride = sizeof(PolymorphicLightInfo);
     virtualLightBufferDesc.initialState = nvrhi::ResourceStates::ShaderResource;
     virtualLightBufferDesc.keepInitialState = true;
@@ -166,7 +166,7 @@ RtxdiResources::RtxdiResources(
 
 
     nvrhi::BufferDesc GSGIGBufferDesc;
-    GSGIGBufferDesc.byteSize = sizeof(GSGIGBufferData) * GSGIsamplesPerFrame;
+    GSGIGBufferDesc.byteSize = sizeof(GSGIGBufferData) * m_VirtualLightSamplesPerFrame;
     GSGIGBufferDesc.structStride = sizeof(GSGIGBufferData);
     GSGIGBufferDesc.initialState = nvrhi::ResourceStates::UnorderedAccess;
     GSGIGBufferDesc.keepInitialState = true;
@@ -206,7 +206,7 @@ RtxdiResources::RtxdiResources(
     GIReservoirBuffer = device->createBuffer(giReservoirBufferDesc);
 
     nvrhi::BufferDesc GSGIReservoirBufferDesc;
-    GSGIReservoirBufferDesc.byteSize = sizeof(RTXDI_PackedDIReservoir) * GSGIsamplesPerFrame;
+    GSGIReservoirBufferDesc.byteSize = sizeof(RTXDI_PackedDIReservoir) * m_VirtualLightSamplesPerFrame;
     GSGIReservoirBufferDesc.structStride = sizeof(RTXDI_PackedDIReservoir);
     GSGIReservoirBufferDesc.initialState = nvrhi::ResourceStates::UnorderedAccess;
     GSGIReservoirBufferDesc.keepInitialState = true;

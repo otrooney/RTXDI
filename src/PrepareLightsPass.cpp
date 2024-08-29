@@ -347,8 +347,10 @@ RTXDI_LightBufferParameters PrepareLightsPass::Process(
     const rtxdi::ReSTIRDIContext& context,
     const std::vector<std::shared_ptr<donut::engine::Light>>& sceneLights,
     bool enableImportanceSampledEnvironmentLight,
-    bool enableGSGIVirtualLights,
-    GSGI_Parameters gsgiParams)
+    bool enableVirtualLights,
+    uint32_t virtualLightsSamplesPerFrame,
+    uint32_t virtualLightsSampleLifespan,
+    bool lockVirtualLights)
 {
     RTXDI_LightBufferParameters outLightBufferParams = {};
     const rtxdi::ReSTIRDIStaticParameters& contextParameters = context.getStaticParameters();
@@ -359,8 +361,8 @@ RTXDI_LightBufferParameters PrepareLightsPass::Process(
     std::vector<PolymorphicLightInfo> primitiveLightInfos;
     uint32_t lightBufferOffset = 0;
 
-    if (enableGSGIVirtualLights)
-        lightBufferOffset = gsgiParams.samplesPerFrame * gsgiParams.sampleLifespan;
+    if (enableVirtualLights)
+        lightBufferOffset = virtualLightsSamplesPerFrame * virtualLightsSampleLifespan;
     
     std::vector<uint32_t> geometryInstanceToLight(m_Scene->GetSceneGraph()->GetGeometryInstancesCount(), RTXDI_INVALID_LIGHT_INDEX);
 
@@ -486,12 +488,12 @@ RTXDI_LightBufferParameters PrepareLightsPass::Process(
     constants.numTasks = uint32_t(tasks.size());
     constants.currentFrameLightOffset = m_MaxLightsInBuffer * m_OddFrame;
     constants.previousFrameLightOffset = m_MaxLightsInBuffer * !m_OddFrame;
-    constants.GSGIEnabled = enableGSGIVirtualLights;
-    constants.GSGICurrentFrameBlock = context.getFrameIndex() % gsgiParams.sampleLifespan;
-    constants.GSGIPreviousFrameBlock = (context.getFrameIndex() - 1) % gsgiParams.sampleLifespan;
-    constants.GSGISamplesPerFrame = gsgiParams.samplesPerFrame;
-    constants.GSGISampleLifespan = gsgiParams.sampleLifespan;
-    constants.GSGILockLights = gsgiParams.lockLights;
+    constants.virtualLightsEnabled = enableVirtualLights;
+    constants.virtualLightsCurrentFrameBlock = context.getFrameIndex() % virtualLightsSampleLifespan;
+    constants.virtualLightsPreviousFrameBlock = (context.getFrameIndex() - 1) % virtualLightsSampleLifespan;
+    constants.virtualLightsSamplesPerFrame = virtualLightsSamplesPerFrame;
+    constants.virtualLightsSampleLifespan = virtualLightsSampleLifespan;
+    constants.lockVirtualLights = lockVirtualLights;
     commandList->setPushConstants(&constants, sizeof(constants));
 
     commandList->dispatch(dm::div_ceil(lightBufferOffset, 256));

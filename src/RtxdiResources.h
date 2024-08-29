@@ -27,8 +27,8 @@ private:
     uint32_t m_MaxEmissiveTriangles = 0;
     uint32_t m_MaxPrimitiveLights = 0;
     uint32_t m_MaxGeometryInstances = 0;
-    uint32_t m_GSGIsamplesPerFrame = 0;
-    uint32_t m_GSGIsampleLifespan = 0;
+    uint32_t m_VirtualLightSamplesPerFrame = 0;
+    uint32_t m_VirtualLightSampleLifespan = 0;
 
 public:
     nvrhi::BufferHandle TaskBuffer;
@@ -61,8 +61,8 @@ public:
         uint32_t maxGeometryInstances,
         uint32_t environmentMapWidth,
         uint32_t environmentMapHeight,
-        uint32_t GSGIsamplesPerFrame,
-        uint32_t GSGIsampleLifespan,
+        uint32_t virtualLightSamplesPerFrame,
+        uint32_t virtualLightSampleLifespan,
         uint32_t reGIRCellCount);
 
     void InitializeNeighborOffsets(nvrhi::ICommandList* commandList, uint32_t neighborOffsetCount);
@@ -71,6 +71,6 @@ public:
     uint32_t GetMaxEmissiveTriangles() const { return m_MaxEmissiveTriangles; }
     uint32_t GetMaxPrimitiveLights() const { return m_MaxPrimitiveLights; }
     uint32_t GetMaxGeometryInstances() const { return m_MaxGeometryInstances; }
-    uint32_t GetGSGIsamplesPerFrame() const { return m_GSGIsamplesPerFrame; }
-    uint32_t GetGSGIsampleLifespan() const { return m_GSGIsampleLifespan; }
+    uint32_t GetVirtualLightSamplesPerFrame() const { return m_VirtualLightSamplesPerFrame; }
+    uint32_t GetVirtualLightSampleLifespan() const { return m_VirtualLightSampleLifespan; }
 };
