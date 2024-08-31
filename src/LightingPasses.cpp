@@ -96,7 +96,7 @@ PMGI_Parameters getDefaultPMGIParams()
     PMGI_Parameters params;
     params.samplesPerFrame = 65536;
     params.sampleLifespan = 8;
-    params.scalingFactor = 0.5f;
+    params.scalingFactor = 10000.0f;
     params.lightSize = 0.01f;
     params.clampingDistance = 0.1f;
     params.virtualLightContribution = DiffuseAndSpecular;

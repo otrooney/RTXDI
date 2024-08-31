@@ -923,7 +923,7 @@ struct TriangleLight
         float3 bitangent;
         branchlessONB(normal, tangent, bitangent);
 
-        // Sample a position on the disk
+        // Sample a position on the triangle
         float3 bary = sampleTriangle(random.xy);
         float3 positionSample = base + edge1 * bary.y + edge2 * bary.z;
         

@@ -23,11 +23,11 @@ void RayGen()
     RTXDI_SamplePdfMipmap(rng, t_LocalLightPdfTexture, g_Const.localLightPdfTextureSize, texelPosition, pdf);
     uint lightIndex = RTXDI_ZCurveToLinearIndex(texelPosition);
     
-    RAB_LightInfo lightInfo = RAB_LoadLightInfo(lightIndex + g_Const.lightBufferParams.localLightBufferRegion.firstLightIndex, false);
+    RAB_LightInfo sourceLightInfo = RAB_LoadLightInfo(lightIndex + g_Const.lightBufferParams.localLightBufferRegion.firstLightIndex, false);
     
     // Sample a photon for that local light
     float4 rand = { sampleUniformRng(rng), sampleUniformRng(rng), sampleUniformRng(rng), sampleUniformRng(rng) };
-    PolymorphicLightPhotonSample photonSample = PolymorphicLight::calcPhotonSample(lightInfo, rand);
+    PolymorphicLightPhotonSample photonSample = PolymorphicLight::calcPhotonSample(sourceLightInfo, rand);
     
     // Trace ray for that photon
     uint instanceMask = INSTANCE_MASK_OPAQUE;
@@ -35,17 +35,13 @@ void RayGen()
     
     if (g_Const.sceneConstants.enableAlphaTestedGeometry)
         instanceMask |= INSTANCE_MASK_ALPHA_TESTED;
-
-    if (g_Const.sceneConstants.enableTransparentGeometry)
-        instanceMask |= INSTANCE_MASK_TRANSPARENT;
-
-    if (!g_Const.sceneConstants.enableTransparentGeometry && !g_Const.sceneConstants.enableAlphaTestedGeometry)
+    else
         rayFlags |= RAY_FLAG_CULL_NON_OPAQUE;
     
     RayDesc ray;
     ray.Origin = photonSample.position;
     ray.Direction = photonSample.direction;
-    ray.TMin = 0.0f;
+    ray.TMin = 0.00001f;
     ray.TMax = 1e+30f;
     
     RayPayload payload = (RayPayload) 0;
@@ -54,35 +50,32 @@ void RayGen()
     TraceRay(SceneBVH, rayFlags, instanceMask, 0, 0, 0, ray, payload);
     REPORT_RAY(payload.instanceID != ~0u);
     
-    // Use 
+    // Use result to create virtual light
     PolymorphicLightInfo virtualLightInfo = (PolymorphicLightInfo) 0;
     uint virtualLightBufferIndex = GlobalIndex.x;
     
-    if (payload.instanceID != ~0u && payload.frontFace)
+    if (payload.instanceID != ~0u)
     {
         GeometrySample gs = getGeometryFromHit(payload.instanceID, payload.geometryIndex, payload.primitiveIndex, payload.barycentrics,
             GeomAttr_All, t_InstanceData, t_GeometryData, t_MaterialConstants);
             
-        MaterialSample ms = sampleGeometryMaterial(gs, 0, 0, 0, MatAttr_BaseColor | MatAttr_Normal, s_MaterialSampler);
+        MaterialSample ms = sampleGeometryMaterial(gs, 0, 0, 0, MatAttr_BaseColor, s_MaterialSampler);
         
-        float3 virtualLightPos = ray.Origin + ray.Direction * payload.committedRayT;
+        float3 virtualLightPos = photonSample.position + photonSample.direction * payload.committedRayT;
         
-        RAB_Surface surface = (RAB_Surface)0;
-        surface.normal = gs.geometryNormal;
-        surface.worldPos = virtualLightPos;
-        surface.roughness = 0;
-        SplitBrdf brdf = EvaluateBrdf(surface, photonSample.position);
+        float3 L = normalize(photonSample.position - virtualLightPos);
+        float brdfDiffuse = Lambert(gs.geometryNormal, -L);
         
-        float3 diffuse = brdf.demodulatedDiffuse * photonSample.radiance / calcLuminance(photonSample.radiance);
-        float3 radiance = surface.diffuseAlbedo * diffuse * g_Const.pmgi.scalingFactor;
+        float3 diffuse = brdfDiffuse * photonSample.radiance / calcLuminance(photonSample.radiance);
+        float3 radiance = ms.diffuseAlbedo * diffuse * g_Const.pmgi.scalingFactor * g_Const.pmgi.invTotalVirtualLights;
         radiance /= square(g_Const.pmgi.lightSize);
         
         // Create virtual light
         packLightColor(radiance, virtualLightInfo);
-        lightInfo.center = virtualLightPos;
-        lightInfo.colorTypeAndFlags |= uint(PolymorphicLightType::kVirtual) << kPolymorphicLightTypeShift;
-        lightInfo.scalars = f32tof16(g_Const.pmgi.lightSize);
-        lightInfo.direction1 = ndirToOctUnorm32(gs.geometryNormal);
+        virtualLightInfo.center = virtualLightPos;
+        virtualLightInfo.colorTypeAndFlags |= uint(PolymorphicLightType::kVirtual) << kPolymorphicLightTypeShift;
+        virtualLightInfo.scalars = f32tof16(g_Const.pmgi.lightSize);
+        virtualLightInfo.direction1 = ndirToOctUnorm32(gs.geometryNormal);
     }
     
     // Write virtual light to buffer

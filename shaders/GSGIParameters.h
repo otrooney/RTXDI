@@ -40,6 +40,7 @@ struct PMGI_Parameters
     float clampingDistance;
     VirtualLightContribution virtualLightContribution;
     uint32_t lockLights;
+    float invTotalVirtualLights;
 };
 
 #endif // RTXDI_GSGI_PARAMETERS_H

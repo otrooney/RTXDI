@@ -1247,6 +1247,7 @@ public:
             lightingSettings.enableGradients = false;
 
         lightingSettings.gsgiParams.clampingRatio = lightingSettings.gsgiParams.clampingDistance / lightingSettings.gsgiParams.lightSize;
+        lightingSettings.pmgiParams.invTotalVirtualLights = 1 / static_cast<float>(lightingSettings.pmgiParams.samplesPerFrame * lightingSettings.pmgiParams.sampleLifespan);
 
         const bool checkerboard = restirDIContext.getStaticParameters().CheckerboardSamplingMode != rtxdi::CheckerboardMode::Off;
 

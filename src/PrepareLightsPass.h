@@ -73,7 +73,7 @@ public:
         const rtxdi::ReSTIRDIContext& context, 
         const std::vector<std::shared_ptr<donut::engine::Light>>& sceneLights,
         bool enableImportanceSampledEnvironmentLight,
-        bool enableGSGIVirtualLights,
+        bool enableVirtualLights,
         uint32_t virtualLightsSamplesPerFrame,
         uint32_t virtualLightsSampleLifespan,
         bool lockVirtualLights);
