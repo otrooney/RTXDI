@@ -3,19 +3,36 @@
 #define RTXDI_GSGI_PARAMETERS_H
 
 #include <rtxdi/ReSTIRDIParameters.h>
+#include <rtxdi/RtxdiTypes.h>
 
-enum GSGIResamplingMode
+
+#define GSGIResamplingMode_NONE 0
+#define GSGIResamplingMode_WORLDSPACE 1
+#define GSGIResamplingMode_SCREENSPACE 2
+
+#define VirtualLightContribution_DIFFUSE_SPECULAR 0
+#define VirtualLightContribution_DIFFUSE 1
+
+
+#ifdef __cplusplus
+enum class GSGIResamplingMode : uint32_t
 {
-    None,
-    WorldSpace,
-    ScreenSpace
+    None = GSGIResamplingMode_NONE,
+    WorldSpace = GSGIResamplingMode_WORLDSPACE,
+    ScreenSpace = GSGIResamplingMode_SCREENSPACE
 };
 
-enum VirtualLightContribution
+enum class VirtualLightContribution : uint32_t
 {
-    DiffuseAndSpecular,
-    DiffuseOnly
+    DiffuseAndSpecular = VirtualLightContribution_DIFFUSE_SPECULAR,
+    DiffuseOnly = VirtualLightContribution_DIFFUSE
 };
+
+#else
+#define GSGIResamplingMode uint32_t
+#define VirtualLightContribution uint32_t
+#endif
+
 
 struct GSGI_Parameters
 {

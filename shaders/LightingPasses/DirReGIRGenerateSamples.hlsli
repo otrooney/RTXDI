@@ -81,17 +81,18 @@ void SelectNextLocalLightWithDirectionalReGIR(
     
     switch (g_Const.dirReGIRSampling)
     {
-        case DirReGIRSampling::Uniform:
+        case DirReGIRSampling_UNIFORM:
             bufferLoc = GetUniformSample(rng);
             break;
-        case DirReGIRSampling::UniformHemisphere:
+        case DirReGIRSampling_UNIFORM_HEMISPHERE:
             bufferLoc = GetUniformHemisphereSample(surface, rng);
             break;
-        case DirReGIRSampling::Diffuse:
+        case DirReGIRSampling_DIFFUSE:
             bufferLoc = GetDiffuseSample(surface, rng);
             break;
-        case DirReGIRSampling::BRDF:
+        case DirReGIRSampling_BRDF:
             bufferLoc = GetBrdfSample(surface, g_Const.dirReGIRBrdfUniformProbability, rng);
+            break;
     }
     
     uint bufferIndex = (cellIndex * 16 * 16) + (bufferLoc.y * 16) + bufferLoc.x;

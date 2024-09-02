@@ -81,12 +81,12 @@ GSGI_Parameters getDefaultGSGIParams()
     params.samplesPerFrame = 65536;
     params.sampleLifespan = 8;
     params.sampleOriginOffset = 1.0f;
-    params.resamplingMode = None;
+    params.resamplingMode = GSGIResamplingMode::None;
     params.scalingFactor = 0.5f;
     params.lightSize = 0.01f;
     params.clampingDistance = 0.1f;
     params.clampingRatio = 10.0f;
-    params.virtualLightContribution = DiffuseAndSpecular;
+    params.virtualLightContribution = VirtualLightContribution::DiffuseAndSpecular;
     params.lockLights = false;
     return params;
 }
@@ -99,7 +99,7 @@ PMGI_Parameters getDefaultPMGIParams()
     params.scalingFactor = 10000.0f;
     params.lightSize = 0.01f;
     params.clampingDistance = 0.1f;
-    params.virtualLightContribution = DiffuseAndSpecular;
+    params.virtualLightContribution = VirtualLightContribution::DiffuseAndSpecular;
     params.lockLights = false;
     return params;
 }
@@ -528,7 +528,7 @@ void LightingPasses::FillResamplingConstants(
 
     constants.gsgi = lightingSettings.gsgiParams;
     constants.pmgi = lightingSettings.pmgiParams;
-    constants.dirReGIRenabled = lightingSettings.reGIRType == ReGIRType::Directional;
+    constants.reGIRType = lightingSettings.reGIRType;
     constants.dirReGIRSampling = lightingSettings.dirReGIRSampling;
     constants.dirReGIRBrdfUniformProbability = lightingSettings.dirReGIRBrdfUniformProbability;
     constants.bypassDirectionalDirReGIRBuild = lightingSettings.bypassDirectionalDirReGIRBuild;
@@ -582,7 +582,7 @@ void LightingPasses::PrepareForLightSampling(
     if (isContext.isReGIREnabled() &&
         lightBufferParams.localLightBufferRegion.numLights > 0)
     {
-        if (localSettings.reGIRType == Standard)
+        if (localSettings.reGIRType == ReGIRType::Standard)
         {
             dm::int2 worldGridDispatchSize = {
                 dm::div_ceil(regirContext.getReGIRLightSlotCount(), RTXDI_GRID_BUILD_GROUP_SIZE),
@@ -618,7 +618,7 @@ void LightingPasses::GenerateGSGILights(
 
     ExecuteRayTracingPass(commandList, m_GSGIInitialSamplesPass, localSettings.enableRayCounts, "GSGIInitialSamples", dispatchSize, ProfilerSection::GSGIInitialSamples);
 
-    if (localSettings.gsgiParams.resamplingMode == WorldSpace)
+    if (localSettings.gsgiParams.resamplingMode == GSGIResamplingMode::WorldSpace)
     {
         dm::int2 worldGridDispatchSize = {
             dm::div_ceil(regirContext.getReGIRLightSlotCount(), 256),
@@ -637,7 +637,7 @@ void LightingPasses::GenerateGSGILights(
         nvrhi::utils::BufferUavBarrier(commandList, m_GSGIGridBuffer);
         ExecuteRayTracingPass(commandList, m_GSGIWorldSpaceResamplingPass, localSettings.enableRayCounts, "GSGIWorldSpaceResampling", dispatchSize, ProfilerSection::GSGIWorldSpaceResampling);
     }
-    else if (localSettings.gsgiParams.resamplingMode == ScreenSpace)
+    else if (localSettings.gsgiParams.resamplingMode == GSGIResamplingMode::ScreenSpace)
     {
         ExecuteRayTracingPass(commandList, m_GSGIScreenSpaceResamplingPass, localSettings.enableRayCounts, "GSGIScreenSpaceResampling", dispatchSize, ProfilerSection::GSGIScreenSpaceResampling);
     }

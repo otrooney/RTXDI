@@ -254,10 +254,10 @@ struct ResamplingConstants
 
     GSGI_Parameters gsgi;
     PMGI_Parameters pmgi;
-    bool dirReGIRenabled;
+    ReGIRType reGIRType;
     DirReGIRSampling dirReGIRSampling;
     float dirReGIRBrdfUniformProbability;
-    bool bypassDirectionalDirReGIRBuild;
+    uint bypassDirectionalDirReGIRBuild;
 };
 
 struct PerPassConstants
@@ -290,17 +290,6 @@ struct GSGIGBufferData
 
     float rSampleDensity;
     float sumOfWeights;
-};
-
-struct PMGIGBufferData
-{
-    float3 worldPos;
-
-    uint diffuseAlbedo;         // R11G11B10_UFLOAT
-    float3 normal;
-
-    uint lightIndex;
-    float3 lightPos;
 };
 
 static const uint kSecondaryGBuffer_IsSpecularRay = 1;

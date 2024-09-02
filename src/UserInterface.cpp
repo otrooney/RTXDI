@@ -499,12 +499,12 @@ void UserInterface::SamplingSettings()
                     samplingSettingsChanged |= ImGui::SliderInt("Local Light ReGIR RIS Samples", (int*)&m_ui.restirDI.numLocalLightReGIRRISSamples, 0, 32);
                     ShowHelpMarker("Number of samples drawn from the local lights ReGIR-based RIS buffer");
 
-                    if (m_ui.lightingSettings.reGIRType == Directional)
+                    if (m_ui.lightingSettings.reGIRType == ReGIRType::Directional)
                     {
                         samplingSettingsChanged |= ImGui::Combo("DirReGIR Sampling", (int*)&m_ui.lightingSettings.dirReGIRSampling, "Uniform\0UniformHemisphere\0Diffuse\0BRDF\0");
                         ShowHelpMarker("Sampling mode for Directional ReGIR-based RIS");
                     }
-                    if (m_ui.lightingSettings.reGIRType == Directional && m_ui.lightingSettings.dirReGIRSampling == BRDF)
+                    if (m_ui.lightingSettings.reGIRType == ReGIRType::Directional && m_ui.lightingSettings.dirReGIRSampling == DirReGIRSampling::BRDF)
                     {
                         samplingSettingsChanged |= ImGui::SliderFloat("DirReGIR BRDF Uniform Sample Ratio", &m_ui.lightingSettings.dirReGIRBrdfUniformProbability, 0.0, 1.0);
                         ShowHelpMarker("Ratio of uniform hemispherical samples to include when using BRDF sampling for Directional ReGIR");

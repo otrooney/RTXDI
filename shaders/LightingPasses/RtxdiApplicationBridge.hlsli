@@ -637,7 +637,7 @@ float RAB_GetLightSampleTargetPdfForSurface(RAB_LightSample lightSample, RAB_Sur
 
     float d = Lambert(surface.normal, -L);
     float3 s;
-    if (surface.roughness == 0 || (lightSample.lightType == PolymorphicLightType::kVirtual && g_Const.gsgi.virtualLightContribution == VirtualLightContribution::DiffuseOnly))
+    if (surface.roughness == 0 || (lightSample.lightType == PolymorphicLightType::kVirtual && g_Const.gsgi.virtualLightContribution == VirtualLightContribution_DIFFUSE))
         s = 0;
     else
         s = GGX_times_NdotL(V, L, surface.normal, max(surface.roughness, kMinRoughness), surface.specularF0);
