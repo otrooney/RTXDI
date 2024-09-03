@@ -70,7 +70,7 @@ void main(uint GlobalIndex : SV_DispatchThreadID)
         
         // Sample light from that point
         float2 randomUV = { RAB_GetNextRandom(rng), RAB_GetNextRandom(rng) };
-        PolymorphicLightSample pls = PolymorphicLight::calcSample(lightInfo, randomUV, samplePos, g_Const.gsgi.clampingRatio);
+        PolymorphicLightSample pls = PolymorphicLight::calcSample(lightInfo, randomUV, samplePos, g_Const.virtualLightClampingRatio);
         
         uint2 arrayLoc;
         

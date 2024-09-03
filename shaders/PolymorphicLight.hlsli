@@ -621,8 +621,9 @@ struct VirtualLight
         
         // Clamp to a near distance limit to prevent weak singularities.
         // TODO: Add compensation term
-        // The clamping distance is defined as a ratio to the radius of the virtual lights. As the radius
-        // is inversely proportional to the sample density, this ensures the clamping distance also is.
+        // The clamping distance is defined as a ratio to the radius of the virtual lights. In GSGI, the radius
+        // is inversely proportional to the sample density, so this ensures the clamping distance also is.
+        // For PMGI, this could be replaced with a simple distance.
         float minDistance = clampDistanceRatio * radius;
         float solidAnglePdf = areaPdf * square(max(sampleDistance, minDistance)) / abs(sampleCosTheta);
 

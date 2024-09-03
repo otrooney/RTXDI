@@ -59,6 +59,7 @@ BRDFPathTracing_SecondarySurfaceReSTIRDIParameters getDefaultBRDFPathTracingSeco
 BRDFPathTracing_Parameters getDefaultBRDFPathTracingParams();
 GSGI_Parameters getDefaultGSGIParams();
 PMGI_Parameters getDefaultPMGIParams();
+VirtualLight_Parameters getDefaultVirtualLightParams();
 
 class LightingPasses
 {
@@ -147,6 +148,7 @@ public:
         BRDFPathTracing_Parameters brdfptParams = getDefaultBRDFPathTracingParams();
         GSGI_Parameters gsgiParams = getDefaultGSGIParams();
         PMGI_Parameters pmgiParams = getDefaultPMGIParams();
+        VirtualLight_Parameters vlightParams = getDefaultVirtualLightParams();
         
 #if WITH_NRD
         const nrd::HitDistanceParameters* reblurDiffHitDistanceParams = nullptr;

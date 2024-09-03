@@ -857,8 +857,6 @@ void UserInterface::SamplingSettings()
             m_ui.resetAccumulation |= ImGui::SliderFloat("Scaling factor", &m_ui.lightingSettings.gsgiParams.scalingFactor, 0.001f, 2.0f);
             m_ui.resetAccumulation |= ImGui::SliderFloat("Light size", &m_ui.lightingSettings.gsgiParams.lightSize, 0.001f, 1.0f);
             m_ui.resetAccumulation |= ImGui::SliderFloat("Virtual light distance clamp", &m_ui.lightingSettings.gsgiParams.clampingDistance, 0.0f, 0.3f);
-            m_ui.resetAccumulation |= ImGui::Combo("Virtual light contribution", (int*)&m_ui.lightingSettings.gsgiParams.virtualLightContribution, "DiffuseAndSpecular\0DiffuseOnly\0");
-            m_ui.resetAccumulation |= ImGui::Checkbox("Freeze virtual lights", (bool*)&m_ui.lightingSettings.gsgiParams.lockLights);
         }
 
         if (m_ui.indirectLightingMode == IndirectLightingMode::PMGI)
@@ -868,8 +866,12 @@ void UserInterface::SamplingSettings()
             m_ui.resetAccumulation |= ImGui::SliderFloat("Scaling factor", &m_ui.lightingSettings.pmgiParams.scalingFactor, 1.0f, 300.0f);
             m_ui.resetAccumulation |= ImGui::SliderFloat("Light size", &m_ui.lightingSettings.pmgiParams.lightSize, 0.001f, 1.0f);
             m_ui.resetAccumulation |= ImGui::SliderFloat("Virtual light distance clamp", &m_ui.lightingSettings.pmgiParams.clampingDistance, 0.0f, 0.3f);
-            m_ui.resetAccumulation |= ImGui::Combo("Virtual light contribution", (int*)&m_ui.lightingSettings.pmgiParams.virtualLightContribution, "DiffuseAndSpecular\0DiffuseOnly\0");
-            m_ui.resetAccumulation |= ImGui::Checkbox("Freeze virtual lights", (bool*)&m_ui.lightingSettings.pmgiParams.lockLights);
+        }
+
+        if (m_ui.indirectLightingMode == IndirectLightingMode::GSGI || m_ui.indirectLightingMode == IndirectLightingMode::PMGI)
+        {
+            m_ui.resetAccumulation |= ImGui::Combo("Virtual light contribution", (int*)&m_ui.lightingSettings.vlightParams.virtualLightContribution, "DiffuseAndSpecular\0DiffuseOnly\0");
+            m_ui.resetAccumulation |= ImGui::Checkbox("Freeze virtual lights", (bool*)&m_ui.lightingSettings.vlightParams.lockLights);
         }
 
         ImGui::TreePop();

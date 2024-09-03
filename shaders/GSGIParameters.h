@@ -3,7 +3,6 @@
 #define RTXDI_GSGI_PARAMETERS_H
 
 #include <rtxdi/ReSTIRDIParameters.h>
-#include <rtxdi/RtxdiTypes.h>
 
 
 #define GSGIResamplingMode_NONE 0
@@ -43,9 +42,7 @@ struct GSGI_Parameters
     float scalingFactor;
     float lightSize;
     float clampingDistance;
-    float clampingRatio;
-    VirtualLightContribution virtualLightContribution;
-    uint32_t lockLights;
+    int pad;
 };
 
 struct PMGI_Parameters
@@ -55,9 +52,17 @@ struct PMGI_Parameters
     float scalingFactor;
     float lightSize;
     float clampingDistance;
+    float invTotalVirtualLights;
+    int pad;
+    int pad2;
+};
+
+struct VirtualLight_Parameters
+{
     VirtualLightContribution virtualLightContribution;
     uint32_t lockLights;
-    float invTotalVirtualLights;
+    float clampingRatio;
+    int pad;
 };
 
 #endif // RTXDI_GSGI_PARAMETERS_H

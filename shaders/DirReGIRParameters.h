@@ -3,7 +3,6 @@
 #define RTXDI_DIRREGIR_PARAMETERS_H
 
 #include <rtxdi/ReSTIRDIParameters.h>
-#include <rtxdi/RtxdiTypes.h>
 
 
 #define ReGIRType_STANDARD 0
@@ -16,6 +15,8 @@
 
 
 #ifdef __cplusplus
+//#include <stdint.h>
+
 enum class ReGIRType : uint32_t
 {
     Standard = ReGIRType_STANDARD,

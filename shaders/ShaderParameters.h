@@ -254,11 +254,13 @@ struct ResamplingConstants
 
     PMGI_Parameters pmgi;
     GSGI_Parameters gsgi;
+    float virtualLightClampingRatio;
+    VirtualLightContribution virtualLightContribution;
     
     ReGIRType reGIRType;
     DirReGIRSampling dirReGIRSampling;
-    float dirReGIRBrdfUniformProbability;
     uint bypassDirectionalDirReGIRBuild;
+    float dirReGIRBrdfUniformProbability;
 };
 
 struct PerPassConstants

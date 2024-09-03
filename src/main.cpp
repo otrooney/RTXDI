@@ -1176,19 +1176,17 @@ public:
 
         uint32_t virtualLightsSamplesPerFrame;
         uint32_t virtualLightsSampleLifespan;
-        bool lockVirtualLights;
+        bool lockVirtualLights = m_ui.lightingSettings.vlightParams.lockLights;
 
         if (enablePMGIPass)
         {
             virtualLightsSamplesPerFrame = m_ui.lightingSettings.pmgiParams.samplesPerFrame;
             virtualLightsSampleLifespan = m_ui.lightingSettings.pmgiParams.sampleLifespan;
-            lockVirtualLights = m_ui.lightingSettings.pmgiParams.lockLights;
         }
         else
         {
             virtualLightsSamplesPerFrame = m_ui.lightingSettings.gsgiParams.samplesPerFrame;
             virtualLightsSampleLifespan = m_ui.lightingSettings.gsgiParams.sampleLifespan;
-            lockVirtualLights = m_ui.lightingSettings.gsgiParams.lockLights;
         }
 
         {
@@ -1246,7 +1244,10 @@ public:
         if (lightingSettings.denoiserMode == DENOISER_MODE_OFF)
             lightingSettings.enableGradients = false;
 
-        lightingSettings.gsgiParams.clampingRatio = lightingSettings.gsgiParams.clampingDistance / lightingSettings.gsgiParams.lightSize;
+        if (enablePMGIPass)
+            lightingSettings.vlightParams.clampingRatio = lightingSettings.pmgiParams.clampingDistance / lightingSettings.pmgiParams.lightSize;
+        else
+            lightingSettings.vlightParams.clampingRatio = lightingSettings.gsgiParams.clampingDistance / lightingSettings.gsgiParams.lightSize;
         lightingSettings.pmgiParams.invTotalVirtualLights = 1 / static_cast<float>(lightingSettings.pmgiParams.samplesPerFrame * lightingSettings.pmgiParams.sampleLifespan);
 
         const bool checkerboard = restirDIContext.getStaticParameters().CheckerboardSamplingMode != rtxdi::CheckerboardMode::Off;

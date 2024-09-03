@@ -85,9 +85,6 @@ GSGI_Parameters getDefaultGSGIParams()
     params.scalingFactor = 0.5f;
     params.lightSize = 0.01f;
     params.clampingDistance = 0.1f;
-    params.clampingRatio = 10.0f;
-    params.virtualLightContribution = VirtualLightContribution::DiffuseAndSpecular;
-    params.lockLights = false;
     return params;
 }
 
@@ -99,6 +96,12 @@ PMGI_Parameters getDefaultPMGIParams()
     params.scalingFactor = 100.0f;
     params.lightSize = 0.01f;
     params.clampingDistance = 0.1f;
+    return params;
+}
+
+VirtualLight_Parameters getDefaultVirtualLightParams()
+{
+    VirtualLight_Parameters params;
     params.virtualLightContribution = VirtualLightContribution::DiffuseAndSpecular;
     params.lockLights = false;
     return params;
@@ -528,6 +531,8 @@ void LightingPasses::FillResamplingConstants(
 
     constants.gsgi = lightingSettings.gsgiParams;
     constants.pmgi = lightingSettings.pmgiParams;
+    constants.virtualLightClampingRatio = lightingSettings.vlightParams.clampingRatio;
+    constants.virtualLightContribution = lightingSettings.vlightParams.virtualLightContribution;
     constants.reGIRType = lightingSettings.reGIRType;
     constants.dirReGIRSampling = lightingSettings.dirReGIRSampling;
     constants.dirReGIRBrdfUniformProbability = lightingSettings.dirReGIRBrdfUniformProbability;

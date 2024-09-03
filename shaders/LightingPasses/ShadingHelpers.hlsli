@@ -65,7 +65,7 @@ bool ShadeSurfaceWithLightSample(
         SplitBrdf brdf = EvaluateBrdf(surface, lightSample.position);
 
         diffuse = brdf.demodulatedDiffuse * lightSample.radiance;
-        if (lightSample.lightType != PolymorphicLightType::kVirtual || g_Const.gsgi.virtualLightContribution == VirtualLightContribution_DIFFUSE_SPECULAR)
+        if (lightSample.lightType != PolymorphicLightType::kVirtual || g_Const.virtualLightContribution == VirtualLightContribution_DIFFUSE_SPECULAR)
             specular = brdf.specular * lightSample.radiance;
 
         lightDistance = length(lightSample.position - surface.worldPos);
