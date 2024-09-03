@@ -252,8 +252,9 @@ struct ResamplingConstants
     uint2 environmentPdfTextureSize;
     uint2 localLightPdfTextureSize;
 
-    GSGI_Parameters gsgi;
     PMGI_Parameters pmgi;
+    GSGI_Parameters gsgi;
+    
     ReGIRType reGIRType;
     DirReGIRSampling dirReGIRSampling;
     float dirReGIRBrdfUniformProbability;

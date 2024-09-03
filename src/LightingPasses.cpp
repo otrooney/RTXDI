@@ -78,8 +78,8 @@ BRDFPathTracing_Parameters getDefaultBRDFPathTracingParams()
 GSGI_Parameters getDefaultGSGIParams()
 {
     GSGI_Parameters params;
-    params.samplesPerFrame = 65536;
-    params.sampleLifespan = 8;
+    params.samplesPerFrame = 16384;
+    params.sampleLifespan = 30;
     params.sampleOriginOffset = 1.0f;
     params.resamplingMode = GSGIResamplingMode::None;
     params.scalingFactor = 0.5f;
@@ -94,9 +94,9 @@ GSGI_Parameters getDefaultGSGIParams()
 PMGI_Parameters getDefaultPMGIParams()
 {
     PMGI_Parameters params;
-    params.samplesPerFrame = 65536;
-    params.sampleLifespan = 8;
-    params.scalingFactor = 10000.0f;
+    params.samplesPerFrame = 16384;
+    params.sampleLifespan = 30;
+    params.scalingFactor = 100.0f;
     params.lightSize = 0.01f;
     params.clampingDistance = 0.1f;
     params.virtualLightContribution = VirtualLightContribution::DiffuseAndSpecular;

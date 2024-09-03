@@ -865,7 +865,7 @@ void UserInterface::SamplingSettings()
         {
             m_ui.resetAccumulation |= ImGui::SliderInt("Samples per frame", (int*)&m_ui.lightingSettings.pmgiParams.samplesPerFrame, 1, 262144 * 4);
             m_ui.resetAccumulation |= ImGui::SliderInt("Sample lifespan (frames)", (int*)&m_ui.lightingSettings.pmgiParams.sampleLifespan, 1, 60);
-            m_ui.resetAccumulation |= ImGui::SliderFloat("Scaling factor", &m_ui.lightingSettings.pmgiParams.scalingFactor, 1000.0f, 1000000000.0f);
+            m_ui.resetAccumulation |= ImGui::SliderFloat("Scaling factor", &m_ui.lightingSettings.pmgiParams.scalingFactor, 1.0f, 300.0f);
             m_ui.resetAccumulation |= ImGui::SliderFloat("Light size", &m_ui.lightingSettings.pmgiParams.lightSize, 0.001f, 1.0f);
             m_ui.resetAccumulation |= ImGui::SliderFloat("Virtual light distance clamp", &m_ui.lightingSettings.pmgiParams.clampingDistance, 0.0f, 0.3f);
             m_ui.resetAccumulation |= ImGui::Combo("Virtual light contribution", (int*)&m_ui.lightingSettings.pmgiParams.virtualLightContribution, "DiffuseAndSpecular\0DiffuseOnly\0");
