@@ -93,9 +93,9 @@ PMGI_Parameters getDefaultPMGIParams()
     PMGI_Parameters params;
     params.samplesPerFrame = 16384;
     params.sampleLifespan = 30;
-    params.scalingFactor = 100.0f;
-    params.lightSize = 0.01f;
-    params.clampingDistance = 0.1f;
+    params.scalingFactor = 200.0f;
+    params.lightSize = 0.1f;
+    params.clampingDistance = 1.0f;
     return params;
 }
 

@@ -460,7 +460,7 @@ void UserInterface::SamplingSettings()
                 m_ui.resetAccumulation |= ImGui::SliderFloat("Cell Size", &m_ui.regirDynamicParameters.regirCellSize, 0.1f, 4.f);
                 m_ui.resetAccumulation |= ImGui::SliderInt("Grid Build Samples", (int*)&m_ui.regirDynamicParameters.regirNumBuildSamples, 0, 32);
                 m_ui.resetAccumulation |= ImGui::SliderFloat("Sampling Jitter", &m_ui.regirDynamicParameters.regirSamplingJitter, 0.0f, 2.f);
-                ImGui::Checkbox("Non-directional DiReGIR (debug)", &m_ui.lightingSettings.bypassDirectionalDirReGIRBuild);
+                ImGui::Checkbox("Non-directional DiReGIR (debug)", (bool*)&m_ui.lightingSettings.bypassDirectionalDirReGIRBuild);
                 ShowHelpMarker("Ignore the directional component when building directional ReGIR cells");
 
                 ImGui::Checkbox("Freeze Position", &m_ui.freezeRegirPosition);
@@ -684,8 +684,8 @@ void UserInterface::SamplingSettings()
             "None\0"
             "BRDF\0"
             "ReSTIR GI\0"
-            "GSGI\0"
-            "PMGI\0"
+            "ReSTIR GSGI\0"
+            "ReSTIR PMGI\0"
         );
         switch (m_ui.indirectLightingMode)
         {
@@ -865,7 +865,7 @@ void UserInterface::SamplingSettings()
             m_ui.resetAccumulation |= ImGui::SliderInt("Sample lifespan (frames)", (int*)&m_ui.lightingSettings.pmgiParams.sampleLifespan, 1, 60);
             m_ui.resetAccumulation |= ImGui::SliderFloat("Scaling factor", &m_ui.lightingSettings.pmgiParams.scalingFactor, 1.0f, 300.0f);
             m_ui.resetAccumulation |= ImGui::SliderFloat("Light size", &m_ui.lightingSettings.pmgiParams.lightSize, 0.001f, 1.0f);
-            m_ui.resetAccumulation |= ImGui::SliderFloat("Virtual light distance clamp", &m_ui.lightingSettings.pmgiParams.clampingDistance, 0.0f, 0.3f);
+            m_ui.resetAccumulation |= ImGui::SliderFloat("Virtual light distance clamp", &m_ui.lightingSettings.pmgiParams.clampingDistance, 0.0f, 2.0f);
         }
 
         if (m_ui.indirectLightingMode == IndirectLightingMode::GSGI || m_ui.indirectLightingMode == IndirectLightingMode::PMGI)
