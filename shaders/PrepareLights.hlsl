@@ -38,7 +38,7 @@ VK_BINDING(1, 1) Texture2D t_BindlessTextures[] : register(t0, space2);
 bool FindTask(uint dispatchThreadId, out PrepareLightsTask task)
 {
     // Use binary search to find the task that contains the current thread's output index:
-    //   task.lightBufferOffset <= dispatchThreadId < (task.lightBufferOffset + task.triangleCount)
+    //   task.lightBufferOffset - g_Const.taskBufferOffset <= dispatchThreadId < (task.lightBufferOffset - g_Const.taskBufferOffset + task.triangleCount)
 
     int left = 0;
     int right = int(g_Const.numTasks) - 1;
@@ -48,7 +48,7 @@ bool FindTask(uint dispatchThreadId, out PrepareLightsTask task)
         int middle = (left + right) / 2;
         task = t_TaskBuffer[middle];
 
-        int tri = int(dispatchThreadId) - int(task.lightBufferOffset); // signed
+        int tri = int(dispatchThreadId) - int(task.lightBufferOffset - g_Const.taskBufferOffset); // signed
 
         if (tri < 0)
         {
@@ -134,7 +134,7 @@ void main(uint dispatchThreadId : SV_DispatchThreadID, uint groupThreadId : SV_G
     if (!FindTask(dispatchThreadId, task))
         return;
 
-    uint triangleIdx = dispatchThreadId - task.lightBufferOffset;
+    uint triangleIdx = dispatchThreadId - (task.lightBufferOffset - g_Const.taskBufferOffset);
     bool isPrimitiveLight = (task.instanceAndGeometryIndex & TASK_PRIMITIVE_LIGHT_BIT) != 0;
     
     PolymorphicLightInfo lightInfo = (PolymorphicLightInfo) 0;

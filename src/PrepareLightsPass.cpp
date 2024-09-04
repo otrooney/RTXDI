@@ -360,9 +360,13 @@ RTXDI_LightBufferParameters PrepareLightsPass::Process(
     std::vector<PrepareLightsTask> tasks;
     std::vector<PolymorphicLightInfo> primitiveLightInfos;
     uint32_t lightBufferOffset = 0;
+    uint32_t taskBufferOffset = 0;
 
     if (enableVirtualLights)
+    {
         lightBufferOffset = virtualLightsSamplesPerFrame * virtualLightsSampleLifespan;
+        taskBufferOffset = virtualLightsSamplesPerFrame * (virtualLightsSampleLifespan - 1);
+    }
     
     std::vector<uint32_t> geometryInstanceToLight(m_Scene->GetSceneGraph()->GetGeometryInstancesCount(), RTXDI_INVALID_LIGHT_INDEX);
 
@@ -494,9 +498,10 @@ RTXDI_LightBufferParameters PrepareLightsPass::Process(
     constants.virtualLightsSamplesPerFrame = virtualLightsSamplesPerFrame;
     constants.virtualLightsSampleLifespan = virtualLightsSampleLifespan;
     constants.lockVirtualLights = lockVirtualLights;
+    constants.taskBufferOffset = taskBufferOffset;
     commandList->setPushConstants(&constants, sizeof(constants));
 
-    commandList->dispatch(dm::div_ceil(lightBufferOffset, 256));
+    commandList->dispatch(dm::div_ceil(lightBufferOffset - taskBufferOffset, 256));
 
     commandList->endMarker();
 

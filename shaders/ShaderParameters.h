@@ -84,6 +84,7 @@ struct PrepareLightsConstants
     uint virtualLightsSamplesPerFrame;
     uint virtualLightsSampleLifespan;
     uint lockVirtualLights;
+    uint taskBufferOffset;
 };
 
 struct PrepareLightsTask
