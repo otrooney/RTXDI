@@ -61,6 +61,7 @@ void RayGen()
     lightInfo.colorTypeAndFlags |= uint(PolymorphicLightType::kVirtual) << kPolymorphicLightTypeShift;
     lightInfo.scalars = f32tof16(radius);
     lightInfo.direction1 = ndirToOctUnorm32(gsgiGBufferData.geoNormal);
+    lightInfo.padding = gsgiGBufferData.geometryInstanceIndex;
 
     // Write to virtual light buffer
     uint gbufferIndex = globalIndexToGBufferPointer(GlobalIndex);

@@ -1189,6 +1189,11 @@ public:
             virtualLightsSampleLifespan = m_ui.lightingSettings.gsgiParams.sampleLifespan;
         }
 
+        if (enableVirtualLights)
+            m_ui.lightingSettings.vlightParams.totalVirtualLights = virtualLightsSamplesPerFrame * virtualLightsSampleLifespan;
+        else
+            m_ui.lightingSettings.vlightParams.totalVirtualLights = 0;
+
         {
             ProfilerScope scope(*m_Profiler, m_CommandList, ProfilerSection::MeshProcessing);
             
@@ -1200,7 +1205,8 @@ public:
                 enableVirtualLights,
                 virtualLightsSamplesPerFrame,
                 virtualLightsSampleLifespan,
-                lockVirtualLights);
+                lockVirtualLights,
+                m_ui.lightingSettings.vlightParams.includeInBrdfLightSampling);
             m_isContext->setLightBufferParams(lightBufferParams);
 
             auto initialSamplingParams = restirDIContext.getInitialSamplingParameters();

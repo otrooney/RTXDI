@@ -39,7 +39,7 @@ void RayGen()
         g_Const.restirDI.initialSamplingParams.numPrimaryLocalLightSamples,
         g_Const.restirDI.initialSamplingParams.numPrimaryInfiniteLightSamples,
         g_Const.restirDI.initialSamplingParams.numPrimaryEnvironmentSamples,
-        g_Const.restirDI.initialSamplingParams.numPrimaryBrdfSamples,
+        0,
         g_Const.restirDI.initialSamplingParams.brdfCutoff,
         0.001f);
 

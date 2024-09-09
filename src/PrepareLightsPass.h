@@ -76,5 +76,6 @@ public:
         bool enableVirtualLights,
         uint32_t virtualLightsSamplesPerFrame,
         uint32_t virtualLightsSampleLifespan,
-        bool lockVirtualLights);
+        bool lockVirtualLights,
+        bool addVirtualLightsToGeometryMap);
 };

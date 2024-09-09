@@ -594,6 +594,7 @@ struct VirtualLight
     float radius; // Note: Assumed to always be >0 to avoid point light special cases
     float3 radiance;
     float3 normal;
+    uint geometryInstanceIndex;
 
     // Interface methods
 
@@ -695,6 +696,11 @@ struct VirtualLight
 
         return approximateSolidAngle * calcLuminance(radiance);
     }
+    
+    uint getGeometryInstanceIndex()
+    {
+        return geometryInstanceIndex;
+    }
 
     static VirtualLight Create(in const PolymorphicLightInfo lightInfo)
     {
@@ -704,6 +710,7 @@ struct VirtualLight
         virtualLight.radius = f16tof32(lightInfo.scalars);
         virtualLight.normal = octToNdirUnorm32(lightInfo.direction1);
         virtualLight.radiance = unpackLightColor(lightInfo);
+        virtualLight.geometryInstanceIndex = lightInfo.padding;
 
         return virtualLight;
     }
@@ -1182,6 +1189,13 @@ struct PolymorphicLight
         case PolymorphicLightType::kVirtual:     return VirtualLight::Create(lightInfo).getPower();
         default: return 0;
         }
+    }
+    
+    static uint getGeometryInstanceIndex(in const PolymorphicLightInfo lightInfo)
+    {
+        if (getLightType(lightInfo) == PolymorphicLightType::kVirtual)
+            return VirtualLight::Create(lightInfo).getGeometryInstanceIndex();
+        return 0;
     }
 
     static float getWeightForVolume(

@@ -872,6 +872,7 @@ void UserInterface::SamplingSettings()
         {
             m_ui.resetAccumulation |= ImGui::Combo("Virtual light contribution", (int*)&m_ui.lightingSettings.vlightParams.virtualLightContribution, "DiffuseAndSpecular\0DiffuseOnly\0");
             m_ui.resetAccumulation |= ImGui::Checkbox("Freeze virtual lights", (bool*)&m_ui.lightingSettings.vlightParams.lockLights);
+            m_ui.resetAccumulation |= ImGui::Checkbox("Include virtual lights in BRDF sampling", (bool*)&m_ui.lightingSettings.vlightParams.includeInBrdfLightSampling);
         }
 
         ImGui::TreePop();

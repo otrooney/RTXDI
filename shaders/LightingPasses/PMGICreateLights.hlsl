@@ -41,7 +41,7 @@ void RayGen()
     RayDesc ray;
     ray.Origin = photonSample.position;
     ray.Direction = photonSample.direction;
-    ray.TMin = 0.00001f;
+    ray.TMin = 0.00001f;        // Non-zero value helps prevent self-intersection with light source
     ray.TMax = 1e+30f;
     
     RayPayload payload = (RayPayload) 0;
@@ -76,6 +76,7 @@ void RayGen()
         virtualLightInfo.colorTypeAndFlags |= uint(PolymorphicLightType::kVirtual) << kPolymorphicLightTypeShift;
         virtualLightInfo.scalars = f32tof16(g_Const.pmgi.lightSize);
         virtualLightInfo.direction1 = ndirToOctUnorm32(gs.geometryNormal);
+        virtualLightInfo.padding = gs.instance.firstGeometryInstanceIndex + payload.geometryIndex;
     }
     
     // Write virtual light to buffer

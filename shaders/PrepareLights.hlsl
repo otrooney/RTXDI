@@ -20,6 +20,7 @@ VK_PUSH_CONSTANT ConstantBuffer<PrepareLightsConstants> g_Const : register(b0);
 RWStructuredBuffer<PolymorphicLightInfo> u_LightDataBuffer : register(u0);
 RWBuffer<uint> u_LightIndexMappingBuffer : register(u1);
 RWTexture2D<float> u_LocalLightPdfTexture : register(u2);
+RWStructuredBuffer<uint> u_GeometryInstanceToLight : register(u3);
 StructuredBuffer<PrepareLightsTask> t_TaskBuffer : register(t0);
 StructuredBuffer<PolymorphicLightInfo> t_PrimitiveLights : register(t1);
 StructuredBuffer<InstanceData> t_InstanceData : register(t2);
@@ -124,6 +125,15 @@ void main(uint dispatchThreadId : SV_DispatchThreadID, uint groupThreadId : SV_G
             // Write the flux into the PDF texture
             uint2 pdfTexturePosition = RTXDI_LinearIndexToZCurve(lightBufferPtr);
             u_LocalLightPdfTexture[pdfTexturePosition] = emissiveFlux;
+            
+            // Update the geometry instance to light buffer
+            uint geometryInstanceIndex = 0;
+            
+            if (emissiveFlux > 0)
+                geometryInstanceIndex = PolymorphicLight::getGeometryInstanceIndex(lightInfo);
+            
+            if (g_Const.addVirtualLightsToGeometryMap && geometryInstanceIndex > 0)
+                u_GeometryInstanceToLight[geometryInstanceIndex] = lightBufferPtr;
         }
         
         return;

@@ -104,6 +104,9 @@ VirtualLight_Parameters getDefaultVirtualLightParams()
     VirtualLight_Parameters params;
     params.virtualLightContribution = VirtualLightContribution::DiffuseAndSpecular;
     params.lockLights = false;
+    params.clampingRatio = 0.0;
+    params.includeInBrdfLightSampling = false;
+    params.totalVirtualLights = 0;
     return params;
 }
 
@@ -531,8 +534,7 @@ void LightingPasses::FillResamplingConstants(
 
     constants.gsgi = lightingSettings.gsgiParams;
     constants.pmgi = lightingSettings.pmgiParams;
-    constants.virtualLightClampingRatio = lightingSettings.vlightParams.clampingRatio;
-    constants.virtualLightContribution = lightingSettings.vlightParams.virtualLightContribution;
+    constants.vLights = lightingSettings.vlightParams;
     constants.reGIRType = lightingSettings.reGIRType;
     constants.dirReGIRSampling = lightingSettings.dirReGIRSampling;
     constants.dirReGIRBrdfUniformProbability = lightingSettings.dirReGIRBrdfUniformProbability;

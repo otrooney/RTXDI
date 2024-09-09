@@ -84,7 +84,9 @@ struct PrepareLightsConstants
     uint virtualLightsSamplesPerFrame;
     uint virtualLightsSampleLifespan;
     uint lockVirtualLights;
+    uint addVirtualLightsToGeometryMap;
     uint taskBufferOffset;
+    uint pad;
 };
 
 struct PrepareLightsTask
@@ -255,9 +257,8 @@ struct ResamplingConstants
 
     PMGI_Parameters pmgi;
     GSGI_Parameters gsgi;
-    float virtualLightClampingRatio;
-    VirtualLightContribution virtualLightContribution;
-    
+    VirtualLight_Parameters vLights;
+
     ReGIRType reGIRType;
     DirReGIRSampling dirReGIRSampling;
     uint bypassDirectionalDirReGIRBuild;
@@ -294,6 +295,7 @@ struct GSGIGBufferData
 
     float rSampleDensity;
     float sumOfWeights;
+    uint geometryInstanceIndex;
 };
 
 static const uint kSecondaryGBuffer_IsSpecularRay = 1;

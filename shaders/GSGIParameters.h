@@ -62,7 +62,11 @@ struct VirtualLight_Parameters
     VirtualLightContribution virtualLightContribution;
     uint32_t lockLights;
     float clampingRatio;
+    uint32_t includeInBrdfLightSampling;
+    uint32_t totalVirtualLights;
     int pad;
+    int pad2;
+    int pad3;
 };
 
 #endif // RTXDI_GSGI_PARAMETERS_H

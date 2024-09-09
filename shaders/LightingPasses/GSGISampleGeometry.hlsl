@@ -62,6 +62,7 @@ void writeToGBuffer(
         gsgiGBufferData.distanceToCamera = distance(g_Const.view.cameraDirectionOrPosition.xyz, gsgiGBufferData.worldPos);
         gsgiGBufferData.rSampleDensity = rDensity;
         gsgiGBufferData.sumOfWeights = payload.sumOfWeights;
+        gsgiGBufferData.geometryInstanceIndex = gs.instance.firstGeometryInstanceIndex + payload.geometryIndex;
     }
     else
     {

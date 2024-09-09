@@ -121,6 +121,7 @@ RtxdiResources::RtxdiResources(
     geometryInstanceToLightBufferDesc.initialState = nvrhi::ResourceStates::ShaderResource;
     geometryInstanceToLightBufferDesc.keepInitialState = true;
     geometryInstanceToLightBufferDesc.debugName = "GeometryInstanceToLightBuffer";
+    geometryInstanceToLightBufferDesc.canHaveUAVs = true;
     GeometryInstanceToLightBuffer = device->createBuffer(geometryInstanceToLightBufferDesc);
 
 

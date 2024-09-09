@@ -46,6 +46,7 @@ PrepareLightsPass::PrepareLightsPass(
         nvrhi::BindingLayoutItem::StructuredBuffer_UAV(0),
         nvrhi::BindingLayoutItem::TypedBuffer_UAV(1),
         nvrhi::BindingLayoutItem::Texture_UAV(2),
+        nvrhi::BindingLayoutItem::StructuredBuffer_UAV(3),
         nvrhi::BindingLayoutItem::StructuredBuffer_SRV(0),
         nvrhi::BindingLayoutItem::StructuredBuffer_SRV(1),
         nvrhi::BindingLayoutItem::StructuredBuffer_SRV(2),
@@ -78,6 +79,7 @@ void PrepareLightsPass::CreateBindingSet(RtxdiResources& resources)
         nvrhi::BindingSetItem::StructuredBuffer_UAV(0, resources.LightDataBuffer),
         nvrhi::BindingSetItem::TypedBuffer_UAV(1, resources.LightIndexMappingBuffer),
         nvrhi::BindingSetItem::Texture_UAV(2, resources.LocalLightPdfTexture),
+        nvrhi::BindingSetItem::StructuredBuffer_UAV(3, resources.GeometryInstanceToLightBuffer),
         nvrhi::BindingSetItem::StructuredBuffer_SRV(0, resources.TaskBuffer),
         nvrhi::BindingSetItem::StructuredBuffer_SRV(1, resources.PrimitiveLightBuffer),
         nvrhi::BindingSetItem::StructuredBuffer_SRV(2, m_Scene->GetInstanceBuffer()),
@@ -343,14 +345,15 @@ static int isInfiniteLight(const donut::engine::Light& light)
 }
 
 RTXDI_LightBufferParameters PrepareLightsPass::Process(
-    nvrhi::ICommandList* commandList, 
+    nvrhi::ICommandList* commandList,
     const rtxdi::ReSTIRDIContext& context,
     const std::vector<std::shared_ptr<donut::engine::Light>>& sceneLights,
     bool enableImportanceSampledEnvironmentLight,
     bool enableVirtualLights,
     uint32_t virtualLightsSamplesPerFrame,
     uint32_t virtualLightsSampleLifespan,
-    bool lockVirtualLights)
+    bool lockVirtualLights,
+    bool addVirtualLightsToGeometryMap)
 {
     RTXDI_LightBufferParameters outLightBufferParams = {};
     const rtxdi::ReSTIRDIStaticParameters& contextParameters = context.getStaticParameters();
@@ -498,6 +501,7 @@ RTXDI_LightBufferParameters PrepareLightsPass::Process(
     constants.virtualLightsSamplesPerFrame = virtualLightsSamplesPerFrame;
     constants.virtualLightsSampleLifespan = virtualLightsSampleLifespan;
     constants.lockVirtualLights = lockVirtualLights;
+    constants.addVirtualLightsToGeometryMap = addVirtualLightsToGeometryMap;
     constants.taskBufferOffset = taskBufferOffset;
     commandList->setPushConstants(&constants, sizeof(constants));
 
