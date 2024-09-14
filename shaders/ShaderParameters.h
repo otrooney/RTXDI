@@ -25,6 +25,8 @@
 #define TASK_PRIMITIVE_LIGHT_BIT 0x80000000u
 #define TASK_VIRTUAL_LIGHT_BIT 0x40000000u
 
+#define PRIMITIVE_SLOTS_PER_GEOMETRY_INSTANCE 1024
+
 #define RTXDI_PRESAMPLING_GROUP_SIZE 256
 #define RTXDI_GRID_BUILD_GROUP_SIZE 256
 #define RTXDI_SCREEN_SPACE_GROUP_SIZE 8
@@ -296,6 +298,7 @@ struct GSGIGBufferData
     float rSampleDensity;
     float sumOfWeights;
     uint geometryInstanceIndex;
+    uint primitiveIndex;
 };
 
 static const uint kSecondaryGBuffer_IsSpecularRay = 1;

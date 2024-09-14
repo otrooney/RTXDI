@@ -156,6 +156,7 @@ LightingPasses::LightingPasses(
         nvrhi::BindingLayoutItem::Texture_SRV(23),
         nvrhi::BindingLayoutItem::Texture_SRV(24),
         nvrhi::BindingLayoutItem::StructuredBuffer_SRV(25),
+        nvrhi::BindingLayoutItem::StructuredBuffer_SRV(26),
 
         nvrhi::BindingLayoutItem::StructuredBuffer_UAV(0),
         nvrhi::BindingLayoutItem::Texture_UAV(1),
@@ -228,6 +229,7 @@ void LightingPasses::CreateBindingSet(
             nvrhi::BindingSetItem::Texture_SRV(23, resources.EnvironmentPdfTexture),
             nvrhi::BindingSetItem::Texture_SRV(24, resources.LocalLightPdfTexture),
             nvrhi::BindingSetItem::StructuredBuffer_SRV(25, resources.GeometryInstanceToLightBuffer),
+            nvrhi::BindingSetItem::StructuredBuffer_SRV(26, resources.PrimitiveInstanceToLightBuffer),
 
             nvrhi::BindingSetItem::StructuredBuffer_UAV(0, resources.LightReservoirBuffer),
             nvrhi::BindingSetItem::Texture_UAV(1, renderTargets.DiffuseLighting),

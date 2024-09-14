@@ -79,7 +79,7 @@ void PrepareLightsPass::CreateBindingSet(RtxdiResources& resources)
         nvrhi::BindingSetItem::StructuredBuffer_UAV(0, resources.LightDataBuffer),
         nvrhi::BindingSetItem::TypedBuffer_UAV(1, resources.LightIndexMappingBuffer),
         nvrhi::BindingSetItem::Texture_UAV(2, resources.LocalLightPdfTexture),
-        nvrhi::BindingSetItem::StructuredBuffer_UAV(3, resources.GeometryInstanceToLightBuffer),
+        nvrhi::BindingSetItem::StructuredBuffer_UAV(3, resources.PrimitiveInstanceToLightBuffer),
         nvrhi::BindingSetItem::StructuredBuffer_SRV(0, resources.TaskBuffer),
         nvrhi::BindingSetItem::StructuredBuffer_SRV(1, resources.PrimitiveLightBuffer),
         nvrhi::BindingSetItem::StructuredBuffer_SRV(2, m_Scene->GetInstanceBuffer()),

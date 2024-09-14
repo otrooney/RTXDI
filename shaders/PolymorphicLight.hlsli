@@ -595,6 +595,7 @@ struct VirtualLight
     float3 radiance;
     float3 normal;
     uint geometryInstanceIndex;
+    uint primitiveIndex;
 
     // Interface methods
 
@@ -701,6 +702,11 @@ struct VirtualLight
     {
         return geometryInstanceIndex;
     }
+    
+    uint getPrimitiveIndex()
+    {
+        return primitiveIndex;
+    }
 
     static VirtualLight Create(in const PolymorphicLightInfo lightInfo)
     {
@@ -710,7 +716,8 @@ struct VirtualLight
         virtualLight.radius = f16tof32(lightInfo.scalars);
         virtualLight.normal = octToNdirUnorm32(lightInfo.direction1);
         virtualLight.radiance = unpackLightColor(lightInfo);
-        virtualLight.geometryInstanceIndex = lightInfo.padding;
+        virtualLight.geometryInstanceIndex = lightInfo.iesProfileIndex;
+        virtualLight.primitiveIndex = lightInfo.primaryAxis;
 
         return virtualLight;
     }
@@ -1195,6 +1202,13 @@ struct PolymorphicLight
     {
         if (getLightType(lightInfo) == PolymorphicLightType::kVirtual)
             return VirtualLight::Create(lightInfo).getGeometryInstanceIndex();
+        return 0;
+    }
+    
+    static uint getPrimitiveIndex(in const PolymorphicLightInfo lightInfo)
+    {
+        if (getLightType(lightInfo) == PolymorphicLightType::kVirtual)
+            return VirtualLight::Create(lightInfo).getPrimitiveIndex();
         return 0;
     }
 

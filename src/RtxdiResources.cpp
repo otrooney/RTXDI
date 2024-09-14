@@ -125,6 +125,16 @@ RtxdiResources::RtxdiResources(
     GeometryInstanceToLightBuffer = device->createBuffer(geometryInstanceToLightBufferDesc);
 
 
+    nvrhi::BufferDesc primitiveInstanceToLightBufferDesc;
+    primitiveInstanceToLightBufferDesc.byteSize = sizeof(uint32_t) * maxGeometryInstances * PRIMITIVE_SLOTS_PER_GEOMETRY_INSTANCE;
+    primitiveInstanceToLightBufferDesc.structStride = sizeof(uint32_t);
+    primitiveInstanceToLightBufferDesc.initialState = nvrhi::ResourceStates::ShaderResource;
+    primitiveInstanceToLightBufferDesc.keepInitialState = true;
+    primitiveInstanceToLightBufferDesc.debugName = "PrimitiveInstanceToLightBuffer";
+    primitiveInstanceToLightBufferDesc.canHaveUAVs = true;
+    PrimitiveInstanceToLightBuffer = device->createBuffer(primitiveInstanceToLightBufferDesc);
+
+
     nvrhi::BufferDesc lightIndexMappingBufferDesc;
     lightIndexMappingBufferDesc.byteSize = sizeof(uint32_t) * lightBufferElements;
     lightIndexMappingBufferDesc.format = nvrhi::Format::R32_UINT;

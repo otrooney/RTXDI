@@ -36,6 +36,7 @@ public:
     nvrhi::BufferHandle VirtualLightBuffer;
     nvrhi::BufferHandle LightDataBuffer;
     nvrhi::BufferHandle GeometryInstanceToLightBuffer;
+    nvrhi::BufferHandle PrimitiveInstanceToLightBuffer;
     nvrhi::BufferHandle LightIndexMappingBuffer;
     nvrhi::BufferHandle RisBuffer;
     nvrhi::BufferHandle RisLightDataBuffer;

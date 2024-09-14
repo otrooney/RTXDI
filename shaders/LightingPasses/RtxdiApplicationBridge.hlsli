@@ -65,6 +65,7 @@ Buffer<uint> t_LightIndexMappingBuffer : register(t22);
 Texture2D t_EnvironmentPdfTexture : register(t23);
 Texture2D t_LocalLightPdfTexture : register(t24);
 StructuredBuffer<uint> t_GeometryInstanceToLight : register(t25);
+StructuredBuffer<uint> t_PrimitiveInstanceToLight : register(t26);
 
 // Screen-sized UAVs
 RWStructuredBuffer<RTXDI_PackedDIReservoir> u_LightReservoirs : register(u0);
@@ -804,8 +805,13 @@ uint getLightIndex(uint instanceID, uint geometryIndex, uint primitiveIndex)
     InstanceData hitInstance = t_InstanceData[instanceID];
     uint geometryInstanceIndex = hitInstance.firstGeometryInstanceIndex + geometryIndex;
     lightIndex = t_GeometryInstanceToLight[geometryInstanceIndex];
-    if (lightIndex != RTXDI_InvalidLightIndex && lightIndex >= g_Const.vLights.totalVirtualLights)
+    if (lightIndex != RTXDI_InvalidLightIndex)
       lightIndex += primitiveIndex;
+    else if (g_Const.vLights.includeInBrdfLightSampling && primitiveIndex < PRIMITIVE_SLOTS_PER_GEOMETRY_INSTANCE)
+    {
+        uint primitiveInstanceBufferIndex = (geometryInstanceIndex * PRIMITIVE_SLOTS_PER_GEOMETRY_INSTANCE) + primitiveIndex;
+        lightIndex = t_PrimitiveInstanceToLight[primitiveInstanceBufferIndex];
+    }
     return lightIndex;
 }
 

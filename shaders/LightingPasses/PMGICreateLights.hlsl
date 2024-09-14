@@ -76,7 +76,8 @@ void RayGen()
         virtualLightInfo.colorTypeAndFlags |= uint(PolymorphicLightType::kVirtual) << kPolymorphicLightTypeShift;
         virtualLightInfo.scalars = f32tof16(g_Const.pmgi.lightSize);
         virtualLightInfo.direction1 = ndirToOctUnorm32(gs.geometryNormal);
-        virtualLightInfo.padding = gs.instance.firstGeometryInstanceIndex + payload.geometryIndex;
+        virtualLightInfo.iesProfileIndex = gs.instance.firstGeometryInstanceIndex + payload.geometryIndex;
+        virtualLightInfo.primaryAxis = payload.primitiveIndex;
     }
     
     // Write virtual light to buffer

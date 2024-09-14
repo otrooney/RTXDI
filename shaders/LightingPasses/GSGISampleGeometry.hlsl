@@ -63,6 +63,7 @@ void writeToGBuffer(
         gsgiGBufferData.rSampleDensity = rDensity;
         gsgiGBufferData.sumOfWeights = payload.sumOfWeights;
         gsgiGBufferData.geometryInstanceIndex = gs.instance.firstGeometryInstanceIndex + payload.geometryIndex;
+        gsgiGBufferData.primitiveIndex = payload.primitiveIndex;
     }
     else
     {
