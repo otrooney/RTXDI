@@ -613,13 +613,10 @@ void UserInterface::SamplingSettings()
                 }
                 samplingSettingsChanged |= ImGui::SliderInt("Spatial Samples", (int*)&m_ui.restirDI.spatialResamplingParams.numSpatialSamples, 1, 32);
 
-                if (m_ui.restirDI.resamplingMode == rtxdi::ReSTIRDI_ResamplingMode::TemporalAndSpatial || m_ui.restirDI.resamplingMode == rtxdi::ReSTIRDI_ResamplingMode::FusedSpatiotemporal)
-                {
-                    samplingSettingsChanged |= ImGui::SliderInt("Disocclusion Boost Samples", (int*)&m_ui.restirDI.spatialResamplingParams.numDisocclusionBoostSamples, 1, 32);
-                    ShowHelpMarker(
-                        "The number of spatial samples to take on surfaces which don't have sufficient accumulated history length. "
-                        "More samples result in faster convergence in disoccluded regions but increase processing time.");
-                }
+                samplingSettingsChanged |= ImGui::SliderInt("Disocclusion Boost Samples", (int*)&m_ui.restirDI.spatialResamplingParams.numDisocclusionBoostSamples, 1, 32);
+                ShowHelpMarker(
+                    "The number of spatial samples to take on surfaces which don't have sufficient accumulated history length. "
+                    "More samples result in faster convergence in disoccluded regions but increase processing time.");
 
                 samplingSettingsChanged |= ImGui::SliderFloat("Spatial Sampling Radius", &m_ui.restirDI.spatialResamplingParams.spatialSamplingRadius, 1.f, 32.f);
                 if (m_showAdvancedSamplingSettings && m_ui.restirDI.resamplingMode != rtxdi::ReSTIRDI_ResamplingMode::FusedSpatiotemporal)

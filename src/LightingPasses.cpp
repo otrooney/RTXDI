@@ -91,7 +91,7 @@ GSGI_Parameters getDefaultGSGIParams()
 PMGI_Parameters getDefaultPMGIParams()
 {
     PMGI_Parameters params;
-    params.samplesPerFrame = 16384;
+    params.samplesPerFrame = 8192;
     params.sampleLifespan = 30;
     params.scalingFactor = 200.0f;
     params.lightSize = 0.1f;
