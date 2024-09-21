@@ -19,8 +19,13 @@
 #include <rtxdi/ReSTIRGIParameters.h>
 
 #include "BRDFPTParameters.h"
+#include "GSGIParameters.h"
+#include "DirReGIRParameters.h"
 
 #define TASK_PRIMITIVE_LIGHT_BIT 0x80000000u
+#define TASK_VIRTUAL_LIGHT_BIT 0x40000000u
+
+#define PRIMITIVE_SLOTS_PER_GEOMETRY_INSTANCE 1024
 
 #define RTXDI_PRESAMPLING_GROUP_SIZE 256
 #define RTXDI_GRID_BUILD_GROUP_SIZE 256
@@ -75,11 +80,20 @@ struct PrepareLightsConstants
     uint numTasks;
     uint currentFrameLightOffset;
     uint previousFrameLightOffset;
+    uint virtualLightsEnabled;
+    uint virtualLightsCurrentFrameBlock;
+    uint virtualLightsPreviousFrameBlock;
+    uint virtualLightsSamplesPerFrame;
+    uint virtualLightsSampleLifespan;
+    uint lockVirtualLights;
+    uint addVirtualLightsToGeometryMap;
+    uint taskBufferOffset;
+    uint pad;
 };
 
 struct PrepareLightsTask
 {
-    uint instanceAndGeometryIndex; // low 12 bits are geometryIndex, mid 19 bits are instanceIndex, high bit is TASK_PRIMITIVE_LIGHT_BIT
+    uint instanceAndGeometryIndex; // low 12 bits are geometryIndex, mid 18 bits are instanceIndex, second highest bit is TASK_VIRTUAL_LIGHT_BIT, high bit is TASK_PRIMITIVE_LIGHT_BIT
     uint triangleCount;
     uint lightBufferOffset;
     int previousLightBufferOffset; // -1 means no previous data
@@ -242,6 +256,15 @@ struct ResamplingConstants
     
     uint2 environmentPdfTextureSize;
     uint2 localLightPdfTextureSize;
+
+    PMGI_Parameters pmgi;
+    GSGI_Parameters gsgi;
+    VirtualLight_Parameters vLights;
+
+    ReGIRType reGIRType;
+    DirReGIRSampling dirReGIRSampling;
+    uint bypassDirectionalDirReGIRBuild;
+    float dirReGIRBrdfUniformProbability;
 };
 
 struct PerPassConstants
@@ -260,6 +283,22 @@ struct SecondaryGBufferData
     
     float3 emission;
     float pdf;
+};
+
+struct GSGIGBufferData
+{
+    float distanceToRayOrigin;
+    float distanceToCamera;
+    float3 worldPos;
+
+    uint diffuseAlbedo;         // R11G11B10_UFLOAT
+    float3 normal;
+    float3 geoNormal;
+
+    float rSampleDensity;
+    float sumOfWeights;
+    uint geometryInstanceIndex;
+    uint primitiveIndex;
 };
 
 static const uint kSecondaryGBuffer_IsSpecularRay = 1;
@@ -286,7 +325,8 @@ enum PolymorphicLightType
     kTriangle,
     kDirectional,
     kEnvironment,
-    kPoint
+    kPoint,
+    kVirtual
 };
 
 // Stores shared light information (type) and specific light information

@@ -75,6 +75,41 @@ BRDFPathTracing_Parameters getDefaultBRDFPathTracingParams()
     return params;
 }
 
+GSGI_Parameters getDefaultGSGIParams()
+{
+    GSGI_Parameters params;
+    params.samplesPerFrame = 16384;
+    params.sampleLifespan = 30;
+    params.sampleOriginOffset = 1.0f;
+    params.resamplingMode = GSGIResamplingMode::None;
+    params.scalingFactor = 0.5f;
+    params.lightSize = 0.01f;
+    params.clampingDistance = 0.1f;
+    return params;
+}
+
+PMGI_Parameters getDefaultPMGIParams()
+{
+    PMGI_Parameters params;
+    params.samplesPerFrame = 8192;
+    params.sampleLifespan = 30;
+    params.scalingFactor = 200.0f;
+    params.lightSize = 0.1f;
+    params.clampingDistance = 1.0f;
+    return params;
+}
+
+VirtualLight_Parameters getDefaultVirtualLightParams()
+{
+    VirtualLight_Parameters params;
+    params.virtualLightContribution = VirtualLightContribution::DiffuseAndSpecular;
+    params.lockLights = false;
+    params.clampingRatio = 0.0;
+    params.includeInBrdfLightSampling = false;
+    params.totalVirtualLights = 0;
+    return params;
+}
+
 LightingPasses::LightingPasses(
     nvrhi::IDevice* device, 
     std::shared_ptr<ShaderFactory> shaderFactory,
@@ -121,6 +156,7 @@ LightingPasses::LightingPasses(
         nvrhi::BindingLayoutItem::Texture_SRV(23),
         nvrhi::BindingLayoutItem::Texture_SRV(24),
         nvrhi::BindingLayoutItem::StructuredBuffer_SRV(25),
+        nvrhi::BindingLayoutItem::StructuredBuffer_SRV(26),
 
         nvrhi::BindingLayoutItem::StructuredBuffer_UAV(0),
         nvrhi::BindingLayoutItem::Texture_UAV(1),
@@ -134,6 +170,12 @@ LightingPasses::LightingPasses(
         nvrhi::BindingLayoutItem::TypedBuffer_UAV(11),
         nvrhi::BindingLayoutItem::TypedBuffer_UAV(12),
         nvrhi::BindingLayoutItem::StructuredBuffer_UAV(13),
+        nvrhi::BindingLayoutItem::StructuredBuffer_UAV(14),
+        nvrhi::BindingLayoutItem::StructuredBuffer_UAV(15),
+        nvrhi::BindingLayoutItem::StructuredBuffer_UAV(16),
+        nvrhi::BindingLayoutItem::TypedBuffer_UAV(17),
+        nvrhi::BindingLayoutItem::TypedBuffer_UAV(18),
+        nvrhi::BindingLayoutItem::TypedBuffer_UAV(19),
 
         nvrhi::BindingLayoutItem::VolatileConstantBuffer(0),
         nvrhi::BindingLayoutItem::PushConstants(1, sizeof(PerPassConstants)),
@@ -187,6 +229,7 @@ void LightingPasses::CreateBindingSet(
             nvrhi::BindingSetItem::Texture_SRV(23, resources.EnvironmentPdfTexture),
             nvrhi::BindingSetItem::Texture_SRV(24, resources.LocalLightPdfTexture),
             nvrhi::BindingSetItem::StructuredBuffer_SRV(25, resources.GeometryInstanceToLightBuffer),
+            nvrhi::BindingSetItem::StructuredBuffer_SRV(26, resources.PrimitiveInstanceToLightBuffer),
 
             nvrhi::BindingSetItem::StructuredBuffer_UAV(0, resources.LightReservoirBuffer),
             nvrhi::BindingSetItem::Texture_UAV(1, renderTargets.DiffuseLighting),
@@ -200,6 +243,12 @@ void LightingPasses::CreateBindingSet(
             nvrhi::BindingSetItem::TypedBuffer_UAV(11, resources.RisLightDataBuffer),
             nvrhi::BindingSetItem::TypedBuffer_UAV(12, m_Profiler->GetRayCountBuffer()),
             nvrhi::BindingSetItem::StructuredBuffer_UAV(13, resources.SecondaryGBuffer),
+            nvrhi::BindingSetItem::StructuredBuffer_UAV(14, resources.GSGIGBuffer),
+            nvrhi::BindingSetItem::StructuredBuffer_UAV(15, resources.GSGIReservoirBuffer),
+            nvrhi::BindingSetItem::StructuredBuffer_UAV(16, resources.VirtualLightBuffer),
+            nvrhi::BindingSetItem::TypedBuffer_UAV(17, resources.GSGIGridBuffer),
+            nvrhi::BindingSetItem::TypedBuffer_UAV(18, resources.DirReGIRBuffer),
+            nvrhi::BindingSetItem::TypedBuffer_UAV(19, resources.DirReGIRLightDataBuffer),
 
             nvrhi::BindingSetItem::ConstantBuffer(0, m_ConstantBuffer),
             nvrhi::BindingSetItem::PushConstants(1, sizeof(PerPassConstants)),
@@ -225,7 +274,10 @@ void LightingPasses::CreateBindingSet(
 
     m_LightReservoirBuffer = resources.LightReservoirBuffer;
     m_SecondarySurfaceBuffer = resources.SecondaryGBuffer;
+    m_GSGIGBuffer = resources.GSGIGBuffer;
+    m_GSGIReservoirBuffer = resources.GSGIReservoirBuffer;
     m_GIReservoirBuffer = resources.GIReservoirBuffer;
+    m_GSGIGridBuffer = resources.GSGIGridBuffer;
 }
 
 void LightingPasses::CreateComputePass(ComputePass& pass, const char* shaderName, const std::vector<donut::engine::ShaderMacro>& macros)
@@ -300,12 +352,29 @@ void LightingPasses::createPresamplingPipelines()
     CreateComputePass(m_PresampleEnvironmentMapPass, "app/LightingPasses/PresampleEnvironmentMap.hlsl", {});
 }
 
-void LightingPasses::createReGIRPipeline(const rtxdi::ReGIRStaticParameters& regirStaticParams, const std::vector<donut::engine::ShaderMacro>& regirMacros)
+void LightingPasses::createReGIRPipeline(const rtxdi::ReGIRStaticParameters& regirStaticParams, const std::vector<donut::engine::ShaderMacro>& regirMacros, const ReGIRType reGIRType)
 {
     if (regirStaticParams.Mode != rtxdi::ReGIRMode::Disabled)
     {
         CreateComputePass(m_PresampleReGIR, "app/LightingPasses/PresampleReGIR.hlsl", regirMacros);
+        CreateComputePass(m_PresampleDirReGIR, "app/LightingPasses/PresampleDirReGIR.hlsl", regirMacros);
     }
+}
+
+void LightingPasses::createGSGIPipelines(const std::vector<donut::engine::ShaderMacro>& regirMacros, bool useRayQuery)
+{
+    m_GSGISampleGeometryPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGISampleGeometry.hlsl", {}, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
+    m_GSGIInitialSamplesPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGIInitialSamples.hlsl", regirMacros, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
+    CreateComputePass(m_GSGIWorldSpaceZeroingPass, "app/LightingPasses/GSGIWorldSpaceZeroing.hlsl", regirMacros);
+    CreateComputePass(m_GSGIWorldSpaceBuildingPass, "app/LightingPasses/GSGIWorldSpaceBuilding.hlsl", regirMacros);
+    m_GSGIWorldSpaceResamplingPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGIWorldSpaceResampling.hlsl", regirMacros, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
+    m_GSGIScreenSpaceResamplingPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGIScreenSpaceResampling.hlsl", {}, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
+    m_GSGICreateLightsPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GSGICreateLights.hlsl", {}, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
+}
+
+void LightingPasses::createPMGIPipelines(bool useRayQuery)
+{
+    m_PMGICreateLightsPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/PMGICreateLights.hlsl", {}, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
 }
 
 void LightingPasses::createReSTIRDIPipelines(const std::vector<donut::engine::ShaderMacro>& regirMacros, bool useRayQuery)
@@ -328,16 +397,18 @@ void LightingPasses::createReSTIRGIPipelines(bool useRayQuery)
     m_GIFinalShadingPass.Init(m_Device, *m_ShaderFactory, "app/LightingPasses/GIFinalShading.hlsl", {}, useRayQuery, RTXDI_SCREEN_SPACE_GROUP_SIZE, m_BindingLayout, nullptr, m_BindlessLayout);
 }
 
-void LightingPasses::CreatePipelines(const rtxdi::ReGIRStaticParameters& regirStaticParams, bool useRayQuery)
+void LightingPasses::CreatePipelines(const rtxdi::ReGIRStaticParameters& regirStaticParams, bool useRayQuery, ReGIRType reGIRType)
 {
     std::vector<donut::engine::ShaderMacro> regirMacros = {
         GetRegirMacro(regirStaticParams)
     };
 
     createPresamplingPipelines();
-    createReGIRPipeline(regirStaticParams, regirMacros);
+    createReGIRPipeline(regirStaticParams, regirMacros, reGIRType);
     createReSTIRDIPipelines(regirMacros, useRayQuery);
     createReSTIRGIPipelines(useRayQuery);
+    createGSGIPipelines(regirMacros, useRayQuery);
+    createPMGIPipelines(useRayQuery);
 }
 
 #if WITH_NRD
@@ -463,6 +534,14 @@ void LightingPasses::FillResamplingConstants(
         constants.environmentPdfTextureSize = m_EnvironmentPdfTextureSize;
     }
 
+    constants.gsgi = lightingSettings.gsgiParams;
+    constants.pmgi = lightingSettings.pmgiParams;
+    constants.vLights = lightingSettings.vlightParams;
+    constants.reGIRType = lightingSettings.reGIRType;
+    constants.dirReGIRSampling = lightingSettings.dirReGIRSampling;
+    constants.dirReGIRBrdfUniformProbability = lightingSettings.dirReGIRBrdfUniformProbability;
+    constants.bypassDirectionalDirReGIRBuild = lightingSettings.bypassDirectionalDirReGIRBuild;
+
     m_CurrentFrameOutputReservoir = isContext.getReSTIRDIContext().getBufferIndices().shadingInputBufferIndex;
 }
 
@@ -512,13 +591,82 @@ void LightingPasses::PrepareForLightSampling(
     if (isContext.isReGIREnabled() &&
         lightBufferParams.localLightBufferRegion.numLights > 0)
     {
+        if (localSettings.reGIRType == ReGIRType::Standard)
+        {
+            dm::int2 worldGridDispatchSize = {
+                dm::div_ceil(regirContext.getReGIRLightSlotCount(), RTXDI_GRID_BUILD_GROUP_SIZE),
+                1
+            };
+
+            ExecuteComputePass(commandList, m_PresampleReGIR, "PresampleReGIR", worldGridDispatchSize, ProfilerSection::PresampleReGIR);
+        }
+        else
+        {
+            int reGIRCellCount = regirContext.getReGIRLightSlotCount() / regirContext.getReGIRStaticParameters().LightsPerCell;
+            dm::int2 dirReGIRDispatchSize = {reGIRCellCount, 1};
+            ExecuteComputePass(commandList, m_PresampleDirReGIR, "PresampleDirReGIR", dirReGIRDispatchSize, ProfilerSection::PresampleDirReGIR);
+        }
+    }
+}
+
+void LightingPasses::GenerateGSGILights(
+    nvrhi::ICommandList* commandList,
+    rtxdi::ReSTIRDIContext& context,
+    rtxdi::ImportanceSamplingContext& isContext,
+    const donut::engine::IView& view,
+    const RenderSettings& localSettings)
+{
+    rtxdi::ReGIRContext& regirContext = isContext.getReGIRContext();
+
+    dm::int2 dispatchSize = {
+        static_cast<int>(localSettings.gsgiParams.samplesPerFrame),
+        1
+    };
+
+    ExecuteRayTracingPass(commandList, m_GSGISampleGeometryPass, localSettings.enableRayCounts, "GSGISampleGeometry", dispatchSize, ProfilerSection::GSGISampleGeometry);
+
+    ExecuteRayTracingPass(commandList, m_GSGIInitialSamplesPass, localSettings.enableRayCounts, "GSGIInitialSamples", dispatchSize, ProfilerSection::GSGIInitialSamples);
+
+    if (localSettings.gsgiParams.resamplingMode == GSGIResamplingMode::WorldSpace)
+    {
         dm::int2 worldGridDispatchSize = {
-            dm::div_ceil(regirContext.getReGIRLightSlotCount(), RTXDI_GRID_BUILD_GROUP_SIZE),
+            dm::div_ceil(regirContext.getReGIRLightSlotCount(), 256),
             1
         };
 
-        ExecuteComputePass(commandList, m_PresampleReGIR, "PresampleReGIR", worldGridDispatchSize, ProfilerSection::PresampleReGIR);
+        ExecuteComputePass(commandList, m_GSGIWorldSpaceZeroingPass, "GSGIWorldSpaceZeroingPass", worldGridDispatchSize, ProfilerSection::GSGIWorldSpaceResampling);
+        nvrhi::utils::BufferUavBarrier(commandList, m_GSGIGridBuffer);
+
+        dm::int2 gridBuildingDispatchSize = {
+            dm::div_ceil(localSettings.gsgiParams.samplesPerFrame, 256),
+            1
+        };
+
+        ExecuteComputePass(commandList, m_GSGIWorldSpaceBuildingPass, "GSGIWorldSpaceBuildingPass", gridBuildingDispatchSize, ProfilerSection::GSGIWorldSpaceResampling);
+        nvrhi::utils::BufferUavBarrier(commandList, m_GSGIGridBuffer);
+        ExecuteRayTracingPass(commandList, m_GSGIWorldSpaceResamplingPass, localSettings.enableRayCounts, "GSGIWorldSpaceResampling", dispatchSize, ProfilerSection::GSGIWorldSpaceResampling);
     }
+    else if (localSettings.gsgiParams.resamplingMode == GSGIResamplingMode::ScreenSpace)
+    {
+        ExecuteRayTracingPass(commandList, m_GSGIScreenSpaceResamplingPass, localSettings.enableRayCounts, "GSGIScreenSpaceResampling", dispatchSize, ProfilerSection::GSGIScreenSpaceResampling);
+    }
+
+    ExecuteRayTracingPass(commandList, m_GSGICreateLightsPass, localSettings.enableRayCounts, "GSGICreateLights", dispatchSize, ProfilerSection::GSGICreateLights);
+}
+
+void LightingPasses::GeneratePMGILights(
+    nvrhi::ICommandList* commandList,
+    rtxdi::ReSTIRDIContext& context,
+    rtxdi::ImportanceSamplingContext& isContext,
+    const donut::engine::IView& view,
+    const RenderSettings& localSettings)
+{
+    dm::int2 dispatchSize = {
+        static_cast<int>(localSettings.pmgiParams.samplesPerFrame),
+        1
+    };
+
+    ExecuteRayTracingPass(commandList, m_PMGICreateLightsPass, localSettings.enableRayCounts, "PMGICreateLights", dispatchSize, ProfilerSection::PMGICreateLights);
 }
 
 void LightingPasses::RenderDirectLighting(

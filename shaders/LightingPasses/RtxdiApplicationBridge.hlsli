@@ -65,6 +65,7 @@ Buffer<uint> t_LightIndexMappingBuffer : register(t22);
 Texture2D t_EnvironmentPdfTexture : register(t23);
 Texture2D t_LocalLightPdfTexture : register(t24);
 StructuredBuffer<uint> t_GeometryInstanceToLight : register(t25);
+StructuredBuffer<uint> t_PrimitiveInstanceToLight : register(t26);
 
 // Screen-sized UAVs
 RWStructuredBuffer<RTXDI_PackedDIReservoir> u_LightReservoirs : register(u0);
@@ -80,6 +81,12 @@ RWBuffer<uint2> u_RisBuffer : register(u10);
 RWBuffer<uint4> u_RisLightDataBuffer : register(u11);
 RWBuffer<uint> u_RayCountBuffer : register(u12);
 RWStructuredBuffer<SecondaryGBufferData> u_SecondaryGBuffer : register(u13);
+RWStructuredBuffer<GSGIGBufferData> u_GSGIGBuffer : register(u14);
+RWStructuredBuffer<RTXDI_PackedDIReservoir> u_GSGIReservoirs : register(u15);
+RWStructuredBuffer<PolymorphicLightInfo> u_VirtualLightDataBuffer : register(u16);
+RWBuffer<int> u_GSGIGridBuffer : register(u17);
+RWBuffer<uint2> u_DirReGIRBuffer : register(u18);
+RWBuffer<uint4> u_DirReGIRLightDataBuffer : register(u19);
 
 // Other
 ConstantBuffer<ResamplingConstants> g_Const : register(b0);
@@ -631,7 +638,7 @@ float RAB_GetLightSampleTargetPdfForSurface(RAB_LightSample lightSample, RAB_Sur
 
     float d = Lambert(surface.normal, -L);
     float3 s;
-    if (surface.roughness == 0)
+    if (surface.roughness == 0 || (lightSample.lightType == PolymorphicLightType::kVirtual && g_Const.vLights.virtualLightContribution == VirtualLightContribution_DIFFUSE))
         s = 0;
     else
         s = GGX_times_NdotL(V, L, surface.normal, max(surface.roughness, kMinRoughness), surface.specularF0);
@@ -655,7 +662,7 @@ float RAB_GetLightTargetPdfForVolume(RAB_LightInfo light, float3 volumeCenter, f
 // in the PDF texture, normalized to the (0..1) range.
 RAB_LightSample RAB_SamplePolymorphicLight(RAB_LightInfo lightInfo, RAB_Surface surface, float2 uv)
 {
-    PolymorphicLightSample pls = PolymorphicLight::calcSample(lightInfo, uv, surface.worldPos);
+    PolymorphicLightSample pls = PolymorphicLight::calcSample(lightInfo, uv, surface.worldPos, g_Const.vLights.clampingRatio);
 
     RAB_LightSample lightSample;
     lightSample.position = pls.position;
@@ -800,6 +807,11 @@ uint getLightIndex(uint instanceID, uint geometryIndex, uint primitiveIndex)
     lightIndex = t_GeometryInstanceToLight[geometryInstanceIndex];
     if (lightIndex != RTXDI_InvalidLightIndex)
       lightIndex += primitiveIndex;
+    else if (g_Const.vLights.includeInBrdfLightSampling && primitiveIndex < PRIMITIVE_SLOTS_PER_GEOMETRY_INSTANCE)
+    {
+        uint primitiveInstanceBufferIndex = (geometryInstanceIndex * PRIMITIVE_SLOTS_PER_GEOMETRY_INSTANCE) + primitiveIndex;
+        lightIndex = t_PrimitiveInstanceToLight[primitiveInstanceBufferIndex];
+    }
     return lightIndex;
 }
 
@@ -845,7 +857,8 @@ bool RAB_TraceRayForLocalLight(float3 origin, float3 direction, float tMin, floa
         hitUV = payload.barycentrics;
     }
 #endif
-
+    REPORT_RAY(hitAnything);
+    
     if (o_lightIndex != RTXDI_InvalidLightIndex)
     {
         o_randXY = randomFromBarycentric(hitUVToBarycentric(hitUV));

@@ -30,6 +30,13 @@ struct PolymorphicLightSample
     float solidAnglePdf;
 };
 
+struct PolymorphicLightPhotonSample
+{
+    float3 position;
+    float3 direction;
+    float3 radiance;
+};
+
 PolymorphicLightType getLightType(PolymorphicLightInfo lightInfo)
 {
     uint typeCode = (lightInfo.colorTypeAndFlags >> kPolymorphicLightTypeShift) 
@@ -190,6 +197,31 @@ struct SphereLight
 
         return lightSample;
     }
+    
+    PolymorphicLightPhotonSample calcPhotonSample(in const float4 random)
+    {
+        // Sample a position on the sphere
+        float pospdf;
+        float3 normalSample = sampleSphere(random.xy, pospdf);
+        float3 positionSample = position + normalSample * radius;
+
+        // Sample a photon direction from that position
+        float3 tangent;
+        float3 bitangent;
+        branchlessONB(normalSample, tangent, bitangent);
+        
+        float pdf;
+        float3 rawDirectionSample = sampleCosHemisphere(random.zw, pdf);
+        float3 directionSample = bitangent * rawDirectionSample.x + tangent * rawDirectionSample.y + normalSample * rawDirectionSample.z;
+        
+        // Create the photon sample
+        PolymorphicLightPhotonSample photonSample;
+        photonSample.position = positionSample;
+        photonSample.direction = directionSample;
+        photonSample.radiance = radiance;
+        
+        return photonSample;
+    }
 
     float getSurfaceArea()
     {
@@ -254,6 +286,21 @@ struct PointLight
         lightSample.solidAnglePdf = 1.0;
 
         return lightSample;
+    }
+    
+    PolymorphicLightPhotonSample calcPhotonSample(in const float4 random)
+    {
+        // Sample a photon direction
+        float pdf;
+        float3 directionSample = sampleSphere(random.zw, pdf);
+        
+        // Create the photon sample
+        PolymorphicLightPhotonSample photonSample;
+        photonSample.position = position;
+        photonSample.direction = directionSample;
+        photonSample.radiance = flux;
+        
+        return photonSample;
     }
 
     float getPower()
@@ -348,6 +395,45 @@ struct CylinderLight
 
         return lightSample;
     }
+    
+    PolymorphicLightPhotonSample calcPhotonSample(in const float4 random)
+    {
+        // Construct a coordinate frame around the tangent vector
+
+        float3 normal;
+        float3 bitangent;
+        branchlessONB(tangent, normal, bitangent);
+
+        // Compute phi and z
+
+        const float2 u = random.xy;
+        const float phi = 2.0f * c_pi * u.x;
+
+        float sinPhi;
+        float cosPhi;
+        sincos(phi, sinPhi, cosPhi);
+
+        const float z = (u.y - 0.5f) * axisLength;
+
+        // Calculate sample position and normal on the cylinder
+
+        const float3 radiusVector = sinPhi * bitangent + cosPhi * normal;
+        const float3 cylinderPositionSample = position + z * tangent + radius * radiusVector;
+        const float3 cylinderNormalSample = normalize(radiusVector);
+        
+        // Sample a photon direction from that position
+        float pdf;
+        float3 rawDirectionSample = sampleCosHemisphere(random.zw, pdf);
+        float3 directionSample = bitangent * rawDirectionSample.x + tangent * rawDirectionSample.y + cylinderNormalSample * rawDirectionSample.z;
+        
+        // Create the photon sample
+        PolymorphicLightPhotonSample photonSample;
+        photonSample.position = cylinderPositionSample;
+        photonSample.direction = directionSample;
+        photonSample.radiance = radiance;
+        
+        return photonSample;
+    }
 
     float getSurfaceArea()
     {
@@ -438,6 +524,30 @@ struct DiskLight
 
         return lightSample;
     }
+    
+    PolymorphicLightPhotonSample calcPhotonSample(in const float4 random)
+    {
+        float3 tangent;
+        float3 bitangent;
+        branchlessONB(normal, tangent, bitangent);
+
+        // Sample a position on the disk
+        const float2 rawDiskSample = sampleDisk(random.xy) * radius;
+        const float3 diskPositionSample = position + tangent * rawDiskSample.x + bitangent * rawDiskSample.y;
+        
+        // Sample a photon direction from that position
+        float pdf;
+        float3 rawDirectionSample = sampleCosHemisphere(random.zw, pdf);
+        float3 directionSample = bitangent * rawDirectionSample.x + tangent * rawDirectionSample.y + normal * rawDirectionSample.z;
+        
+        // Create the photon sample
+        PolymorphicLightPhotonSample photonSample;
+        photonSample.position = diskPositionSample;
+        photonSample.direction = directionSample;
+        photonSample.radiance = radiance;
+        
+        return photonSample;
+    }
 
     float getSurfaceArea()
     {
@@ -476,6 +586,143 @@ struct DiskLight
         return diskLight;
     }
 };
+
+// Based on disk light
+struct VirtualLight
+{
+    float3 position;
+    float radius; // Note: Assumed to always be >0 to avoid point light special cases
+    float3 radiance;
+    float3 normal;
+    uint geometryInstanceIndex;
+    uint primitiveIndex;
+
+    // Interface methods
+
+    PolymorphicLightSample calcSample(in const float2 random, in const float3 viewerPosition, in const float clampDistanceRatio)
+    {
+        float3 tangent;
+        float3 bitangent;
+        branchlessONB(normal, tangent, bitangent);
+
+        // Compute a raw disk sample
+
+        const float2 rawDiskSample = sampleDisk(random) * radius;
+
+        // Calculate sample position and normal on the disk
+
+        const float3 diskPositionSample = position + tangent * rawDiskSample.x + bitangent * rawDiskSample.y;
+        const float3 diskNormalSample = normal;
+
+        // Calculate pdf
+
+        const float areaPdf = 1.0f / getSurfaceArea();
+        const float3 sampleVector = diskPositionSample - viewerPosition;
+        const float sampleDistance = length(sampleVector);
+        const float sampleCosTheta = dot(normalize(sampleVector), -diskNormalSample);
+        
+        // Clamp to a near distance limit to prevent weak singularities.
+        // TODO: Add compensation term
+        // The clamping distance is defined as a ratio to the radius of the virtual lights. In GSGI, the radius
+        // is inversely proportional to the sample density, so this ensures the clamping distance also is.
+        // For PMGI, this could be replaced with a simple distance.
+        float minDistance = clampDistanceRatio * radius;
+        float solidAnglePdf = areaPdf * square(max(sampleDistance, minDistance)) / abs(sampleCosTheta);
+
+        // Create the light sample
+        PolymorphicLightSample lightSample;
+
+        lightSample.position = diskPositionSample;
+        lightSample.normal = diskNormalSample;
+
+        if (sampleCosTheta <= 0.0f)
+        {
+            lightSample.radiance = float3(0.0f, 0.0f, 0.0f);
+            lightSample.solidAnglePdf = 0.0f;
+        }
+        else
+        {
+            lightSample.radiance = radiance;
+            lightSample.solidAnglePdf = solidAnglePdf;
+        }
+
+        return lightSample;
+    }
+    
+    PolymorphicLightPhotonSample calcPhotonSample(in const float4 random)
+    {
+        float3 tangent;
+        float3 bitangent;
+        branchlessONB(normal, tangent, bitangent);
+
+        // Sample a position on the disk
+        const float2 rawDiskSample = sampleDisk(random.xy) * radius;
+        const float3 diskPositionSample = position + tangent * rawDiskSample.x + bitangent * rawDiskSample.y;
+        
+        // Sample a photon direction from that position
+        float pdf;
+        float3 rawDirectionSample = sampleCosHemisphere(random.zw, pdf);
+        float3 directionSample = bitangent * rawDirectionSample.x + tangent * rawDirectionSample.y + normal * rawDirectionSample.z;
+        
+        // Create the photon sample
+        PolymorphicLightPhotonSample photonSample;
+        photonSample.position = diskPositionSample;
+        photonSample.direction = directionSample;
+        photonSample.radiance = radiance;
+        
+        return photonSample;
+    }
+
+    float getSurfaceArea()
+    {
+        return c_pi * square(radius);
+    }
+
+    float getPower()
+    {
+        return getSurfaceArea() * c_pi * calcLuminance(radiance); // * getShapingFluxFactor(shaping);
+    }
+
+    float getWeightForVolume(in const float3 volumeCenter, in const float volumeRadius)
+    {
+        float distanceToPlane = dot(volumeCenter - position, normal);
+        if (distanceToPlane < -volumeRadius)
+            return 0; // Cull - the entire volume is below the light's horizon
+
+        float distance = length(volumeCenter - position);
+        distance = getAverageDistanceToVolume(distance, volumeRadius);
+
+        float approximateSolidAngle = getSurfaceArea() / square(distance);
+        approximateSolidAngle = min(approximateSolidAngle, 2 * c_pi);
+
+        return approximateSolidAngle * calcLuminance(radiance);
+    }
+    
+    uint getGeometryInstanceIndex()
+    {
+        return geometryInstanceIndex;
+    }
+    
+    uint getPrimitiveIndex()
+    {
+        return primitiveIndex;
+    }
+
+    static VirtualLight Create(in const PolymorphicLightInfo lightInfo)
+    {
+        VirtualLight virtualLight;
+
+        virtualLight.position = lightInfo.center;
+        virtualLight.radius = f16tof32(lightInfo.scalars);
+        virtualLight.normal = octToNdirUnorm32(lightInfo.direction1);
+        virtualLight.radiance = unpackLightColor(lightInfo);
+        virtualLight.geometryInstanceIndex = lightInfo.iesProfileIndex;
+        virtualLight.primitiveIndex = lightInfo.primaryAxis;
+
+        return virtualLight;
+    }
+};
+
 
 struct RectLight
 {
@@ -528,6 +775,34 @@ struct RectLight
         }
 
         return lightSample;
+    }
+    
+    PolymorphicLightPhotonSample calcPhotonSample(in const float4 random)
+    {
+        // Compute x and y
+        const float2 u = random.xy;
+        const float2 rawRectangleSample = float2((u.x - 0.5f) * dimensions.x, (u.y - 0.5f) * dimensions.y);
+
+        // Calculate sample position on the rectangle
+
+        const float3 rectanglePositionSample = position + dirx * rawRectangleSample.x + diry * rawRectangleSample.y;
+        
+        // Sample a photon direction from that position
+        float3 tangent;
+        float3 bitangent;
+        branchlessONB(normal, tangent, bitangent);
+        
+        float pdf;
+        float3 rawDirectionSample = sampleCosHemisphere(random.zw, pdf);
+        float3 directionSample = bitangent * rawDirectionSample.x + tangent * rawDirectionSample.y + normal * rawDirectionSample.z;
+        
+        // Create the photon sample
+        PolymorphicLightPhotonSample photonSample;
+        photonSample.position = rectanglePositionSample;
+        photonSample.direction = directionSample;
+        photonSample.radiance = radiance;
+        
+        return photonSample;
     }
 
     float getSurfaceArea()
@@ -655,6 +930,30 @@ struct TriangleLight
         result.radiance = radiance;
 
         return result;   
+    }
+    
+    PolymorphicLightPhotonSample calcPhotonSample(in const float4 random)
+    {
+        float3 tangent;
+        float3 bitangent;
+        branchlessONB(normal, tangent, bitangent);
+
+        // Sample a position on the triangle
+        float3 bary = sampleTriangle(random.xy);
+        float3 positionSample = base + edge1 * bary.y + edge2 * bary.z;
+        
+        // Sample a photon direction from that position
+        float pdf;
+        float3 rawDirectionSample = sampleCosHemisphere(random.zw, pdf);
+        float3 directionSample = bitangent * rawDirectionSample.x + tangent * rawDirectionSample.y + normal * rawDirectionSample.z;
+        
+        // Create the photon sample
+        PolymorphicLightPhotonSample photonSample;
+        photonSample.position = positionSample;
+        photonSample.direction = directionSample;
+        photonSample.radiance = radiance;
+        
+        return photonSample;
     }
 
     float calcSolidAnglePdf(in const float3 viewerPosition,
@@ -810,9 +1109,11 @@ struct EnvironmentLight
 struct PolymorphicLight
 {
     static PolymorphicLightSample calcSample(
-        in const PolymorphicLightInfo lightInfo, 
-        in const float2 random, 
-        in const float3 viewerPosition)
+        in const PolymorphicLightInfo lightInfo,
+        in const float2 random,
+        in const float3 viewerPosition,
+        in const float clampDistanceRatio
+    )
     {
         PolymorphicLightSample lightSample = (PolymorphicLightSample)0;
 
@@ -826,6 +1127,7 @@ struct PolymorphicLight
         case PolymorphicLightType::kTriangle:    lightSample = TriangleLight::Create(lightInfo).calcSample(random, viewerPosition); break;
         case PolymorphicLightType::kDirectional: lightSample = DirectionalLight::Create(lightInfo).calcSample(random, viewerPosition); break;
         case PolymorphicLightType::kEnvironment: lightSample = EnvironmentLight::Create(lightInfo).calcSample(random, viewerPosition); break;
+        case PolymorphicLightType::kVirtual:     lightSample = VirtualLight::Create(lightInfo).calcSample(random, viewerPosition, clampDistanceRatio); break;
         }
 
         if (lightSample.solidAnglePdf > 0)
@@ -835,6 +1137,47 @@ struct PolymorphicLight
         }
 
         return lightSample;
+    }
+    
+    static PolymorphicLightPhotonSample calcPhotonSample(
+        in const PolymorphicLightInfo lightInfo,
+        in const float4 random
+    )
+    {
+        PolymorphicLightPhotonSample photonSample = (PolymorphicLightPhotonSample) 0;
+
+        switch (getLightType(lightInfo))
+        {
+            case PolymorphicLightType::kSphere:
+                photonSample = SphereLight::Create(lightInfo).calcPhotonSample(random);
+                break;
+            case PolymorphicLightType::kPoint:
+                photonSample = PointLight::Create(lightInfo).calcPhotonSample(random);
+                break;
+            case PolymorphicLightType::kCylinder:
+                photonSample = CylinderLight::Create(lightInfo).calcPhotonSample(random);
+                break;
+            case PolymorphicLightType::kDisk:
+                photonSample = DiskLight::Create(lightInfo).calcPhotonSample(random);
+                break;
+            case PolymorphicLightType::kRect:
+                photonSample = RectLight::Create(lightInfo).calcPhotonSample(random);
+                break;
+            case PolymorphicLightType::kTriangle:
+                photonSample = TriangleLight::Create(lightInfo).calcPhotonSample(random);
+                break;
+            case PolymorphicLightType::kDirectional:
+                photonSample = (PolymorphicLightPhotonSample) 0;
+                break;
+            case PolymorphicLightType::kEnvironment:
+                photonSample = (PolymorphicLightPhotonSample) 0;
+                break;
+            case PolymorphicLightType::kVirtual:
+                photonSample = VirtualLight::Create(lightInfo).calcPhotonSample(random);
+                break;
+        }
+
+        return photonSample;
     }
 
     static float getPower(
@@ -850,8 +1193,23 @@ struct PolymorphicLight
         case PolymorphicLightType::kTriangle:    return TriangleLight::Create(lightInfo).getPower();
         case PolymorphicLightType::kDirectional: return 0; // infinite lights don't go into the local light PDF map
         case PolymorphicLightType::kEnvironment: return 0;
+        case PolymorphicLightType::kVirtual:     return VirtualLight::Create(lightInfo).getPower();
         default: return 0;
         }
+    }
+    
+    static uint getGeometryInstanceIndex(in const PolymorphicLightInfo lightInfo)
+    {
+        if (getLightType(lightInfo) == PolymorphicLightType::kVirtual)
+            return VirtualLight::Create(lightInfo).getGeometryInstanceIndex();
+        return 0;
+    }
+    
+    static uint getPrimitiveIndex(in const PolymorphicLightInfo lightInfo)
+    {
+        if (getLightType(lightInfo) == PolymorphicLightType::kVirtual)
+            return VirtualLight::Create(lightInfo).getPrimitiveIndex();
+        return 0;
     }
 
     static float getWeightForVolume(
@@ -869,6 +1227,7 @@ struct PolymorphicLight
         case PolymorphicLightType::kTriangle:    return TriangleLight::Create(lightInfo).getWeightForVolume(volumeCenter, volumeRadius);
         case PolymorphicLightType::kDirectional: return 0; // infinite lights do not affect volume sampling
         case PolymorphicLightType::kEnvironment: return 0;
+        case PolymorphicLightType::kVirtual:     return VirtualLight::Create(lightInfo).getWeightForVolume(volumeCenter, volumeRadius);
         default: return 0;
         }
     }

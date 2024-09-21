@@ -20,11 +20,13 @@ VK_PUSH_CONSTANT ConstantBuffer<PrepareLightsConstants> g_Const : register(b0);
 RWStructuredBuffer<PolymorphicLightInfo> u_LightDataBuffer : register(u0);
 RWBuffer<uint> u_LightIndexMappingBuffer : register(u1);
 RWTexture2D<float> u_LocalLightPdfTexture : register(u2);
+RWStructuredBuffer<uint> u_PrimitiveInstanceToLight : register(u3);
 StructuredBuffer<PrepareLightsTask> t_TaskBuffer : register(t0);
 StructuredBuffer<PolymorphicLightInfo> t_PrimitiveLights : register(t1);
 StructuredBuffer<InstanceData> t_InstanceData : register(t2);
 StructuredBuffer<GeometryData> t_GeometryData : register(t3);
 StructuredBuffer<MaterialConstants> t_MaterialConstants : register(t4);
+StructuredBuffer<PolymorphicLightInfo> t_VirtualLights : register(t5);
 SamplerState s_MaterialSampler : register(s0);
 
 VK_BINDING(0, 1) ByteAddressBuffer t_BindlessBuffers[] : register(t0, space1);
@@ -37,7 +39,7 @@ VK_BINDING(1, 1) Texture2D t_BindlessTextures[] : register(t0, space2);
 bool FindTask(uint dispatchThreadId, out PrepareLightsTask task)
 {
     // Use binary search to find the task that contains the current thread's output index:
-    //   task.lightBufferOffset <= dispatchThreadId < (task.lightBufferOffset + task.triangleCount)
+    //   task.lightBufferOffset - g_Const.taskBufferOffset <= dispatchThreadId < (task.lightBufferOffset - g_Const.taskBufferOffset + task.triangleCount)
 
     int left = 0;
     int right = int(g_Const.numTasks) - 1;
@@ -47,7 +49,7 @@ bool FindTask(uint dispatchThreadId, out PrepareLightsTask task)
         int middle = (left + right) / 2;
         task = t_TaskBuffer[middle];
 
-        int tri = int(dispatchThreadId) - int(task.lightBufferOffset); // signed
+        int tri = int(dispatchThreadId) - int(task.lightBufferOffset - g_Const.taskBufferOffset); // signed
 
         if (tri < 0)
         {
@@ -72,16 +74,88 @@ bool FindTask(uint dispatchThreadId, out PrepareLightsTask task)
 [numthreads(256, 1, 1)]
 void main(uint dispatchThreadId : SV_DispatchThreadID, uint groupThreadId : SV_GroupThreadID)
 {
+    if (g_Const.virtualLightsEnabled && dispatchThreadId < g_Const.virtualLightsSamplesPerFrame)
+    {
+        uint virtualLightIndex = dispatchThreadId;
+        
+        // Each block contains lights from one frame. We iterate through them and update this index in each.
+        for (uint blockIndex = 0; blockIndex < g_Const.virtualLightsSampleLifespan; blockIndex++)
+        {
+            uint blockOffset = blockIndex * g_Const.virtualLightsSamplesPerFrame;
+            uint lightBufferPtr = blockOffset + virtualLightIndex;
+            int prevBufferPtr = lightBufferPtr;
+            
+            PolymorphicLightInfo lightInfo = (PolymorphicLightInfo) 0;
+            
+            if ((blockIndex == g_Const.virtualLightsCurrentFrameBlock) && !g_Const.lockVirtualLights)
+            {
+                // If we're in the block for the current frame, grab the light from the virtual lights buffer
+                lightInfo = t_VirtualLights[virtualLightIndex];
+                prevBufferPtr = -1;
+                u_LightDataBuffer[g_Const.currentFrameLightOffset + lightBufferPtr] = lightInfo;
+            }
+            else if (blockIndex == g_Const.virtualLightsPreviousFrameBlock)
+            {
+                // If it's from the previous frame, we need to copy it over from that section of the light buffer
+                lightInfo = u_LightDataBuffer[g_Const.previousFrameLightOffset + prevBufferPtr];
+                u_LightDataBuffer[g_Const.currentFrameLightOffset + lightBufferPtr] = lightInfo;
+            }
+            else
+            {
+                // Otherwise grab it from this frame's light buffer to update the PDF texture
+                lightInfo = u_LightDataBuffer[g_Const.currentFrameLightOffset + lightBufferPtr];
+            }
+            
+            if (prevBufferPtr >= 0)
+            {
+                // Mapping buffer for the previous frame points at the current frame.
+                // Add one to indicate that this is a valid mapping, zero is invalid.
+                u_LightIndexMappingBuffer[g_Const.previousFrameLightOffset + prevBufferPtr] =
+                g_Const.currentFrameLightOffset + lightBufferPtr + 1;
+
+                // Mapping buffer for the current frame points at the previous frame.
+                // Add one to indicate that this is a valid mapping, zero is invalid.
+                u_LightIndexMappingBuffer[g_Const.currentFrameLightOffset + lightBufferPtr] =
+                g_Const.previousFrameLightOffset + prevBufferPtr + 1;
+            }
+
+            // Calculate the total flux
+            float emissiveFlux = PolymorphicLight::getPower(lightInfo);
+
+            // Write the flux into the PDF texture
+            uint2 pdfTexturePosition = RTXDI_LinearIndexToZCurve(lightBufferPtr);
+            u_LocalLightPdfTexture[pdfTexturePosition] = emissiveFlux;
+            
+            // Update the geometry instance to light buffer
+            uint geometryInstanceIndex = 0;
+            uint primitiveIndex = 0;
+            
+            if (emissiveFlux > 0)
+            {
+                geometryInstanceIndex = PolymorphicLight::getGeometryInstanceIndex(lightInfo);
+                primitiveIndex = PolymorphicLight::getPrimitiveIndex(lightInfo);
+            }
+            
+            if (g_Const.addVirtualLightsToGeometryMap && geometryInstanceIndex > 0 && primitiveIndex < PRIMITIVE_SLOTS_PER_GEOMETRY_INSTANCE)
+            {
+                uint primitiveInstanceBufferIndex = (geometryInstanceIndex * PRIMITIVE_SLOTS_PER_GEOMETRY_INSTANCE) + primitiveIndex;
+                u_PrimitiveInstanceToLight[primitiveInstanceBufferIndex] = lightBufferPtr;
+            }  
+        }
+        
+        return;
+    }
+
     PrepareLightsTask task = (PrepareLightsTask)0;
 
     if (!FindTask(dispatchThreadId, task))
         return;
 
-    uint triangleIdx = dispatchThreadId - task.lightBufferOffset;
+    uint triangleIdx = dispatchThreadId - (task.lightBufferOffset - g_Const.taskBufferOffset);
     bool isPrimitiveLight = (task.instanceAndGeometryIndex & TASK_PRIMITIVE_LIGHT_BIT) != 0;
     
-    PolymorphicLightInfo lightInfo = (PolymorphicLightInfo)0;
-
+    PolymorphicLightInfo lightInfo = (PolymorphicLightInfo) 0;
+        
     if (!isPrimitiveLight)
     {
         InstanceData instance = t_InstanceData[task.instanceAndGeometryIndex >> 12];
@@ -192,13 +266,13 @@ void main(uint dispatchThreadId : SV_DispatchThreadID, uint groupThreadId : SV_G
 
         // Mapping buffer for the previous frame points at the current frame.
         // Add one to indicate that this is a valid mapping, zero is invalid.
-        u_LightIndexMappingBuffer[g_Const.previousFrameLightOffset + prevBufferPtr] = 
-            g_Const.currentFrameLightOffset + lightBufferPtr + 1;
+        u_LightIndexMappingBuffer[g_Const.previousFrameLightOffset + prevBufferPtr] =
+    g_Const.currentFrameLightOffset + lightBufferPtr + 1;
 
         // Mapping buffer for the current frame points at the previous frame.
         // Add one to indicate that this is a valid mapping, zero is invalid.
-        u_LightIndexMappingBuffer[g_Const.currentFrameLightOffset + lightBufferPtr] = 
-            g_Const.previousFrameLightOffset + prevBufferPtr + 1;
+        u_LightIndexMappingBuffer[g_Const.currentFrameLightOffset + lightBufferPtr] =
+    g_Const.previousFrameLightOffset + prevBufferPtr + 1;
     }
 
     // Calculate the total flux
@@ -206,5 +280,6 @@ void main(uint dispatchThreadId : SV_DispatchThreadID, uint groupThreadId : SV_G
 
     // Write the flux into the PDF texture
     uint2 pdfTexturePosition = RTXDI_LinearIndexToZCurve(lightBufferPtr);
-    u_LocalLightPdfTexture[pdfTexturePosition] = emissiveFlux;
+    u_LocalLightPdfTexture[pdfTexturePosition] = emissiveFlux;  
+
 }

@@ -460,6 +460,8 @@ void UserInterface::SamplingSettings()
                 m_ui.resetAccumulation |= ImGui::SliderFloat("Cell Size", &m_ui.regirDynamicParameters.regirCellSize, 0.1f, 4.f);
                 m_ui.resetAccumulation |= ImGui::SliderInt("Grid Build Samples", (int*)&m_ui.regirDynamicParameters.regirNumBuildSamples, 0, 32);
                 m_ui.resetAccumulation |= ImGui::SliderFloat("Sampling Jitter", &m_ui.regirDynamicParameters.regirSamplingJitter, 0.0f, 2.f);
+                ImGui::Checkbox("Non-directional DiReGIR (debug)", (bool*)&m_ui.lightingSettings.bypassDirectionalDirReGIRBuild);
+                ShowHelpMarker("Ignore the directional component when building directional ReGIR cells");
 
                 ImGui::Checkbox("Freeze Position", &m_ui.freezeRegirPosition);
                 ImGui::SameLine(0.f, 10.f);
@@ -491,9 +493,22 @@ void UserInterface::SamplingSettings()
                     samplingSettingsChanged |= ImGui::RadioButton("Local Light ReGIR RIS", initSamplingMode, 2);
                     ShowHelpMarker("Sample local lights using ReGIR-based RIS");
 
+                    samplingSettingsChanged |= ImGui::Combo("ReGIR Mode", (int*)&m_ui.lightingSettings.reGIRType, "Standard\0Directional\0");
+                    ShowHelpMarker("Use standard ReGIR-based RIS or Directional ReGIR-based RIS");
+
                     samplingSettingsChanged |= ImGui::SliderInt("Local Light ReGIR RIS Samples", (int*)&m_ui.restirDI.numLocalLightReGIRRISSamples, 0, 32);
-                    ShowHelpMarker(
-                        "Number of samples drawn from the local lights ReGIR-based RIS buffer");
+                    ShowHelpMarker("Number of samples drawn from the local lights ReGIR-based RIS buffer");
+
+                    if (m_ui.lightingSettings.reGIRType == ReGIRType::Directional)
+                    {
+                        samplingSettingsChanged |= ImGui::Combo("DirReGIR Sampling", (int*)&m_ui.lightingSettings.dirReGIRSampling, "Uniform\0UniformHemisphere\0Diffuse\0BRDF\0");
+                        ShowHelpMarker("Sampling mode for Directional ReGIR-based RIS");
+                    }
+                    if (m_ui.lightingSettings.reGIRType == ReGIRType::Directional && m_ui.lightingSettings.dirReGIRSampling == DirReGIRSampling::BRDF)
+                    {
+                        samplingSettingsChanged |= ImGui::SliderFloat("DirReGIR BRDF Uniform Sample Ratio", &m_ui.lightingSettings.dirReGIRBrdfUniformProbability, 0.0, 1.0);
+                        ShowHelpMarker("Ratio of uniform hemispherical samples to include when using BRDF sampling for Directional ReGIR");
+                    }
 
                     static const char* regirFallbackOptions[] = { "Uniform Sampling", "Power RIS" };
                     const char* currentFallbackOption = regirFallbackOptions[static_cast<int>(m_ui.regirDynamicParameters.fallbackSamplingMode)];
@@ -598,13 +613,10 @@ void UserInterface::SamplingSettings()
                 }
                 samplingSettingsChanged |= ImGui::SliderInt("Spatial Samples", (int*)&m_ui.restirDI.spatialResamplingParams.numSpatialSamples, 1, 32);
 
-                if (m_ui.restirDI.resamplingMode == rtxdi::ReSTIRDI_ResamplingMode::TemporalAndSpatial || m_ui.restirDI.resamplingMode == rtxdi::ReSTIRDI_ResamplingMode::FusedSpatiotemporal)
-                {
-                    samplingSettingsChanged |= ImGui::SliderInt("Disocclusion Boost Samples", (int*)&m_ui.restirDI.spatialResamplingParams.numDisocclusionBoostSamples, 1, 32);
-                    ShowHelpMarker(
-                        "The number of spatial samples to take on surfaces which don't have sufficient accumulated history length. "
-                        "More samples result in faster convergence in disoccluded regions but increase processing time.");
-                }
+                samplingSettingsChanged |= ImGui::SliderInt("Disocclusion Boost Samples", (int*)&m_ui.restirDI.spatialResamplingParams.numDisocclusionBoostSamples, 1, 32);
+                ShowHelpMarker(
+                    "The number of spatial samples to take on surfaces which don't have sufficient accumulated history length. "
+                    "More samples result in faster convergence in disoccluded regions but increase processing time.");
 
                 samplingSettingsChanged |= ImGui::SliderFloat("Spatial Sampling Radius", &m_ui.restirDI.spatialResamplingParams.spatialSamplingRadius, 1.f, 32.f);
                 if (m_showAdvancedSamplingSettings && m_ui.restirDI.resamplingMode != rtxdi::ReSTIRDI_ResamplingMode::FusedSpatiotemporal)
@@ -669,6 +681,8 @@ void UserInterface::SamplingSettings()
             "None\0"
             "BRDF\0"
             "ReSTIR GI\0"
+            "ReSTIR GSGI\0"
+            "ReSTIR PMGI\0"
         );
         switch (m_ui.indirectLightingMode)
         {
@@ -682,14 +696,24 @@ void UserInterface::SamplingSettings()
                 "Trace diffuse and specular BRDF rays and resample results with ReSTIR GI. "
                 "Shade the surfaces found with BRDF rays using direct light sampling.");
             break;
+        case IndirectLightingMode::GSGI:
+            ShowHelpMarker(
+                "Use virtual lights generated by geometry sampling for GI."
+                "Include those lights in the ReSTIR DI pass.");
+            break;
+        case IndirectLightingMode::PMGI:
+            ShowHelpMarker(
+                "Use virtual lights generated by photon mapping for GI."
+                "Include those lights in the ReSTIR DI pass.");
+            break;
         default:;
         }
 
-        bool isUsingIndirect = m_ui.indirectLightingMode != IndirectLightingMode::None;
+        bool isUsingBrdfIndirect = m_ui.indirectLightingMode == IndirectLightingMode::Brdf || m_ui.indirectLightingMode == IndirectLightingMode::ReStirGI;
 
         m_ui.resetAccumulation |= ImGui::SliderFloat("Min Secondary Roughness", &m_ui.lightingSettings.brdfptParams.materialOverrideParams.minSecondaryRoughness, 0.f, 1.f);
 
-        if (isUsingIndirect && ImGui::TreeNode("Secondary Surface Light Sampling"))
+        if (isUsingBrdfIndirect && ImGui::TreeNode("Secondary Surface Light Sampling"))
         {
             // TODO: Determine whether to have choice of sampling mode here and in ReSTIR DI.
             // Should probably have a single numLocalLightSamples in the struct and have the UI keep track of the 3 different values for each mode
@@ -700,7 +724,7 @@ void UserInterface::SamplingSettings()
             ImGui::TreePop();
         }
 
-        if (isUsingIndirect && m_ui.directLightingMode == DirectLightingMode::ReStir && ImGui::TreeNode("Reuse Primary Samples"))
+        if (isUsingBrdfIndirect && m_ui.directLightingMode == DirectLightingMode::ReStir && ImGui::TreeNode("Reuse Primary Samples"))
         {
             m_ui.resetAccumulation |= ImGui::Checkbox("Reuse RTXDI samples for secondary surface", (bool*)&m_ui.lightingSettings.brdfptParams.enableSecondaryResampling);
             ShowHelpMarker(
@@ -819,6 +843,33 @@ void UserInterface::SamplingSettings()
 
             m_ui.resetAccumulation |= ImGui::Checkbox("Final visibility", (bool*)&m_ui.restirGI.finalShadingParams.enableFinalVisibility);
             m_ui.resetAccumulation |= ImGui::Checkbox("Final MIS", (bool*)&m_ui.restirGI.finalShadingParams.enableFinalMIS);
+        }
+
+        if (m_ui.indirectLightingMode == IndirectLightingMode::GSGI)
+        {
+            m_ui.resetAccumulation |= ImGui::SliderInt("Samples per frame", (int*)&m_ui.lightingSettings.gsgiParams.samplesPerFrame, 1, 262144*4);
+            m_ui.resetAccumulation |= ImGui::SliderInt("Sample lifespan (frames)", (int*)&m_ui.lightingSettings.gsgiParams.sampleLifespan, 1, 60);
+            m_ui.resetAccumulation |= ImGui::SliderFloat("Sample origin offset", &m_ui.lightingSettings.gsgiParams.sampleOriginOffset, 0.0f, 4.0f);
+            m_ui.resetAccumulation |= ImGui::Combo("Resampling mode", (int*)&m_ui.lightingSettings.gsgiParams.resamplingMode, "None\0WorldSpace\0ScreenSpace");
+            m_ui.resetAccumulation |= ImGui::SliderFloat("Scaling factor", &m_ui.lightingSettings.gsgiParams.scalingFactor, 0.001f, 2.0f);
+            m_ui.resetAccumulation |= ImGui::SliderFloat("Light size", &m_ui.lightingSettings.gsgiParams.lightSize, 0.001f, 1.0f);
+            m_ui.resetAccumulation |= ImGui::SliderFloat("Virtual light distance clamp", &m_ui.lightingSettings.gsgiParams.clampingDistance, 0.0f, 0.3f);
+        }
+
+        if (m_ui.indirectLightingMode == IndirectLightingMode::PMGI)
+        {
+            m_ui.resetAccumulation |= ImGui::SliderInt("Samples per frame", (int*)&m_ui.lightingSettings.pmgiParams.samplesPerFrame, 1, 262144 * 4);
+            m_ui.resetAccumulation |= ImGui::SliderInt("Sample lifespan (frames)", (int*)&m_ui.lightingSettings.pmgiParams.sampleLifespan, 1, 60);
+            m_ui.resetAccumulation |= ImGui::SliderFloat("Scaling factor", &m_ui.lightingSettings.pmgiParams.scalingFactor, 1.0f, 300.0f);
+            m_ui.resetAccumulation |= ImGui::SliderFloat("Light size", &m_ui.lightingSettings.pmgiParams.lightSize, 0.001f, 1.0f);
+            m_ui.resetAccumulation |= ImGui::SliderFloat("Virtual light distance clamp", &m_ui.lightingSettings.pmgiParams.clampingDistance, 0.0f, 2.0f);
+        }
+
+        if (m_ui.indirectLightingMode == IndirectLightingMode::GSGI || m_ui.indirectLightingMode == IndirectLightingMode::PMGI)
+        {
+            m_ui.resetAccumulation |= ImGui::Combo("Virtual light contribution", (int*)&m_ui.lightingSettings.vlightParams.virtualLightContribution, "DiffuseAndSpecular\0DiffuseOnly\0");
+            m_ui.resetAccumulation |= ImGui::Checkbox("Freeze virtual lights", (bool*)&m_ui.lightingSettings.vlightParams.lockLights);
+            m_ui.resetAccumulation |= ImGui::Checkbox("Include virtual lights in BRDF sampling", (bool*)&m_ui.lightingSettings.vlightParams.includeInBrdfLightSampling);
         }
 
         ImGui::TreePop();
@@ -944,6 +995,7 @@ void UserInterface::PostProcessSettings()
             "DiffuseConfidence\0"
             "SpecularConfidence\0"
             "MotionVectors\0"
+            "LocalLightPdf\0"
         );
         ImGui::PopItemWidth();
 

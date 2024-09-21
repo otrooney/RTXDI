@@ -20,6 +20,8 @@
 #include <rtxdi/ReSTIRDIParameters.h>
 #include <rtxdi/ReSTIRGIParameters.h>
 #include "../shaders/BRDFPTParameters.h"
+#include "../shaders/GSGIParameters.h"
+#include "../shaders/DirReGIRParameters.h"
 
 namespace donut::engine
 {
@@ -55,6 +57,9 @@ typedef int ibool;
 BRDFPathTracing_MaterialOverrideParameters getDefaultBRDFPathTracingMaterialOverrideParams();
 BRDFPathTracing_SecondarySurfaceReSTIRDIParameters getDefaultBRDFPathTracingSecondarySurfaceReSTIRDIParams();
 BRDFPathTracing_Parameters getDefaultBRDFPathTracingParams();
+GSGI_Parameters getDefaultGSGIParams();
+PMGI_Parameters getDefaultPMGIParams();
+VirtualLight_Parameters getDefaultVirtualLightParams();
 
 class LightingPasses
 {
@@ -69,6 +74,9 @@ private:
     ComputePass m_PresampleLightsPass;
     ComputePass m_PresampleEnvironmentMapPass;
     ComputePass m_PresampleReGIR;
+    ComputePass m_PresampleDirReGIR;
+    ComputePass m_GSGIWorldSpaceZeroingPass;
+    ComputePass m_GSGIWorldSpaceBuildingPass;
     RayTracingPass m_GenerateInitialSamplesPass;
     RayTracingPass m_TemporalResamplingPass;
     RayTracingPass m_SpatialResamplingPass;
@@ -81,6 +89,12 @@ private:
     RayTracingPass m_GISpatialResamplingPass;
     RayTracingPass m_GIFusedResamplingPass;
     RayTracingPass m_GIFinalShadingPass;
+    RayTracingPass m_GSGISampleGeometryPass;
+    RayTracingPass m_GSGIInitialSamplesPass;
+    RayTracingPass m_GSGIWorldSpaceResamplingPass;
+    RayTracingPass m_GSGIScreenSpaceResamplingPass;
+    RayTracingPass m_GSGICreateLightsPass;
+    RayTracingPass m_PMGICreateLightsPass;
     nvrhi::BindingLayoutHandle m_BindingLayout;
     nvrhi::BindingLayoutHandle m_BindlessLayout;
     nvrhi::BindingSetHandle m_BindingSet;
@@ -88,7 +102,10 @@ private:
     nvrhi::BufferHandle m_ConstantBuffer;
     nvrhi::BufferHandle m_LightReservoirBuffer;
     nvrhi::BufferHandle m_SecondarySurfaceBuffer;
+    nvrhi::BufferHandle m_GSGIGBuffer;
     nvrhi::BufferHandle m_GIReservoirBuffer;
+    nvrhi::BufferHandle m_GSGIReservoirBuffer;
+    nvrhi::BufferHandle m_GSGIGridBuffer;
 
     dm::uint2 m_EnvironmentPdfTextureSize;
     dm::uint2 m_LocalLightPdfTextureSize;
@@ -123,7 +140,15 @@ public:
         float gradientSensitivity = 8.f;
         float confidenceHistoryLength = 0.75f;
 
+        ReGIRType reGIRType = ReGIRType::Standard;
+        DirReGIRSampling dirReGIRSampling = DirReGIRSampling::BRDF;
+        float dirReGIRBrdfUniformProbability = 0.25;
+        ibool bypassDirectionalDirReGIRBuild = false;
+
         BRDFPathTracing_Parameters brdfptParams = getDefaultBRDFPathTracingParams();
+        GSGI_Parameters gsgiParams = getDefaultGSGIParams();
+        PMGI_Parameters pmgiParams = getDefaultPMGIParams();
+        VirtualLight_Parameters vlightParams = getDefaultVirtualLightParams();
         
 #if WITH_NRD
         const nrd::HitDistanceParameters* reblurDiffHitDistanceParams = nullptr;
@@ -139,7 +164,7 @@ public:
         std::shared_ptr<Profiler> profiler,
         nvrhi::IBindingLayout* bindlessLayout);
 
-    void CreatePipelines(const rtxdi::ReGIRStaticParameters& regirStaticParams, bool useRayQuery);
+    void CreatePipelines(const rtxdi::ReGIRStaticParameters& regirStaticParams, bool useRayQuery, ReGIRType reGIRType);
 
     void CreateBindingSet(
         nvrhi::rt::IAccelStruct* topLevelAS,
@@ -154,6 +179,20 @@ public:
         const donut::engine::IView& previousView,
         const RenderSettings& localSettings,
         bool enableAccumulation);
+
+    void GenerateGSGILights(
+        nvrhi::ICommandList* commandList,
+        rtxdi::ReSTIRDIContext& context,
+        rtxdi::ImportanceSamplingContext& isContext,
+        const donut::engine::IView& view,
+        const RenderSettings& localSettings);
+
+    void GeneratePMGILights(
+        nvrhi::ICommandList* commandList,
+        rtxdi::ReSTIRDIContext& context,
+        rtxdi::ImportanceSamplingContext& isContext,
+        const donut::engine::IView& view,
+        const RenderSettings& localSettings);
 
     void RenderDirectLighting(
         nvrhi::ICommandList* commandList,
@@ -192,7 +231,9 @@ private:
         const rtxdi::ImportanceSamplingContext& isContext);
 
     void createPresamplingPipelines();
-    void createReGIRPipeline(const rtxdi::ReGIRStaticParameters& regirStaticParams, const std::vector<donut::engine::ShaderMacro>& regirMacros);
+    void createReGIRPipeline(const rtxdi::ReGIRStaticParameters& regirStaticParams, const std::vector<donut::engine::ShaderMacro>& regirMacros, const ReGIRType reGIRType);
     void createReSTIRDIPipelines(const std::vector<donut::engine::ShaderMacro>& regirMacros, bool useRayQuery);
     void createReSTIRGIPipelines(bool useRayQuery);
+    void createGSGIPipelines(const std::vector<donut::engine::ShaderMacro>& regirMacros, bool useRayQuery);
+    void createPMGIPipelines(bool useRayQuery);
 };

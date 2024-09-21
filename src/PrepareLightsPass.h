@@ -15,6 +15,7 @@
 #include <rtxdi/ReSTIRDI.h>
 #include <memory>
 #include <unordered_map>
+#include "../shaders/GSGIParameters.h"
 
 
 namespace donut::engine
@@ -40,6 +41,7 @@ private:
 
     nvrhi::BufferHandle m_TaskBuffer;
     nvrhi::BufferHandle m_PrimitiveLightBuffer;
+    nvrhi::BufferHandle m_VirtualLightBuffer;
     nvrhi::BufferHandle m_LightIndexMappingBuffer;
     nvrhi::BufferHandle m_GeometryInstanceToLightBuffer;
     nvrhi::TextureHandle m_LocalLightPdfTexture;
@@ -70,5 +72,10 @@ public:
         nvrhi::ICommandList* commandList, 
         const rtxdi::ReSTIRDIContext& context, 
         const std::vector<std::shared_ptr<donut::engine::Light>>& sceneLights,
-        bool enableImportanceSampledEnvironmentLight);
+        bool enableImportanceSampledEnvironmentLight,
+        bool enableVirtualLights,
+        uint32_t virtualLightsSamplesPerFrame,
+        uint32_t virtualLightsSampleLifespan,
+        bool lockVirtualLights,
+        bool addVirtualLightsToGeometryMap);
 };

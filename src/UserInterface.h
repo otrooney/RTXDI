@@ -50,7 +50,9 @@ enum class IndirectLightingMode : uint32_t
 {
     None,
     Brdf,
-    ReStirGI
+    ReStirGI,
+    GSGI,
+    PMGI
 };
 
 enum class QualityPreset : uint32_t
@@ -102,7 +104,8 @@ enum DebugRenderOutput
     PrevRestirLuminance,
     DiffuseConfidence,
     SpecularConfidence,
-    MotionVectors
+    MotionVectors,
+    LocalLightPdf
 };
 
 struct UIData
@@ -119,7 +122,7 @@ struct UIData
     ibool enableToneMapping = true;
     ibool enablePixelJitter = true;
     ibool rasterizeGBuffer = true;
-    ibool useRayQuery = true;
+    ibool useRayQuery = false;
     ibool enableBloom = true;
     float exposureBias = -1.0f;
     float verticalFov = 60.f;

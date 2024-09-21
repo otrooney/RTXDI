@@ -87,7 +87,7 @@ void shadeSurface(
 
     float clipDepth = 0;
     float viewDepth = 0;
-    float3 motion = getMotionVector(g_Const.view, g_Const.viewPrev, 
+    float3 motion = getMotionVector(g_Const.view, g_Const.viewPrev,
         gs.instance, gs.objectSpacePosition, gs.prevObjectSpacePosition, clipDepth, viewDepth);
 
     u_ViewDepth[pixelPosition] = viewDepth;

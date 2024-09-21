@@ -27,21 +27,30 @@ private:
     uint32_t m_MaxEmissiveTriangles = 0;
     uint32_t m_MaxPrimitiveLights = 0;
     uint32_t m_MaxGeometryInstances = 0;
+    uint32_t m_VirtualLightSamplesPerFrame = 0;
+    uint32_t m_VirtualLightSampleLifespan = 0;
 
 public:
     nvrhi::BufferHandle TaskBuffer;
     nvrhi::BufferHandle PrimitiveLightBuffer;
+    nvrhi::BufferHandle VirtualLightBuffer;
     nvrhi::BufferHandle LightDataBuffer;
     nvrhi::BufferHandle GeometryInstanceToLightBuffer;
+    nvrhi::BufferHandle PrimitiveInstanceToLightBuffer;
     nvrhi::BufferHandle LightIndexMappingBuffer;
     nvrhi::BufferHandle RisBuffer;
     nvrhi::BufferHandle RisLightDataBuffer;
+    nvrhi::BufferHandle DirReGIRBuffer;
+    nvrhi::BufferHandle DirReGIRLightDataBuffer;
     nvrhi::BufferHandle NeighborOffsetsBuffer;
     nvrhi::BufferHandle LightReservoirBuffer;
     nvrhi::BufferHandle SecondaryGBuffer;
+    nvrhi::BufferHandle GSGIGBuffer;
     nvrhi::TextureHandle EnvironmentPdfTexture;
     nvrhi::TextureHandle LocalLightPdfTexture;
     nvrhi::BufferHandle GIReservoirBuffer;
+    nvrhi::BufferHandle GSGIReservoirBuffer;
+    nvrhi::BufferHandle GSGIGridBuffer;
 
     RtxdiResources(
         nvrhi::IDevice* device, 
@@ -52,7 +61,10 @@ public:
         uint32_t maxPrimitiveLights,
         uint32_t maxGeometryInstances,
         uint32_t environmentMapWidth,
-        uint32_t environmentMapHeight);
+        uint32_t environmentMapHeight,
+        uint32_t virtualLightSamplesPerFrame,
+        uint32_t virtualLightSampleLifespan,
+        uint32_t reGIRCellCount);
 
     void InitializeNeighborOffsets(nvrhi::ICommandList* commandList, uint32_t neighborOffsetCount);
 
@@ -60,4 +72,6 @@ public:
     uint32_t GetMaxEmissiveTriangles() const { return m_MaxEmissiveTriangles; }
     uint32_t GetMaxPrimitiveLights() const { return m_MaxPrimitiveLights; }
     uint32_t GetMaxGeometryInstances() const { return m_MaxGeometryInstances; }
+    uint32_t GetVirtualLightSamplesPerFrame() const { return m_VirtualLightSamplesPerFrame; }
+    uint32_t GetVirtualLightSampleLifespan() const { return m_VirtualLightSampleLifespan; }
 };

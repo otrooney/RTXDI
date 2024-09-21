@@ -1,4 +1,28 @@
 
+# RTXDI Fork
+
+This is a fork of Nvidia's RTXDI repo, to which I've added several experimental features, focused on implementing global illumination using virtual lights. The main features added are:
+
+### ReSTIR Geometry Sampling Global Illumination
+
+ReSTIR Geometry Sampling Global Illumination, or GSGI, is a global illumination technique which randomly samples points on geometry in the scene, creates virtual lights representing diffuse reflected radiance from those points, and then feeds those lights into the ReSTIR DI algorithm.
+
+A more thorough description of how GSGI works can be found in [this blog post](https://otrooney.github.io/global-illumination/2024/09/20/restir-gsgi.html).
+
+### ReSTIR Photon Mapping Global Illumination
+
+ReSTIR Photon Mapping Global Illumination, or PMGI, is a global illumination technique which maps photons from lights in the scene, and creates virtual lights at the points they hit. Those virtual lights are then fed into the ReSTIR DI algorithm.
+
+A blog post will be added in the future describing PMGI in more detail.
+
+### Directional ReGIR
+
+ReGIR is an exsiting technique (implemented in RTXDI) which improves the quality of initial samples used by ReSTIR by presampling lights for cells arranged in a grid structure. Directional ReGIR modifies this by storing samples within those cells according to the direction of the light source. This allows the initial samples to be chosen based on the BRDF of each pixel, with the goal of increasing the quality of initial samples, particularly for specular lighting.
+
+A blog post will be added describing Directional ReGIR in more detail in the future.
+
+---
+
 # RTXDI SDK and Sample Applications
 
 Version 2.2.0.

@@ -46,11 +46,13 @@ PrepareLightsPass::PrepareLightsPass(
         nvrhi::BindingLayoutItem::StructuredBuffer_UAV(0),
         nvrhi::BindingLayoutItem::TypedBuffer_UAV(1),
         nvrhi::BindingLayoutItem::Texture_UAV(2),
+        nvrhi::BindingLayoutItem::StructuredBuffer_UAV(3),
         nvrhi::BindingLayoutItem::StructuredBuffer_SRV(0),
         nvrhi::BindingLayoutItem::StructuredBuffer_SRV(1),
         nvrhi::BindingLayoutItem::StructuredBuffer_SRV(2),
         nvrhi::BindingLayoutItem::StructuredBuffer_SRV(3),
         nvrhi::BindingLayoutItem::StructuredBuffer_SRV(4),
+        nvrhi::BindingLayoutItem::StructuredBuffer_SRV(5),
         nvrhi::BindingLayoutItem::Sampler(0)
     };
 
@@ -77,17 +79,20 @@ void PrepareLightsPass::CreateBindingSet(RtxdiResources& resources)
         nvrhi::BindingSetItem::StructuredBuffer_UAV(0, resources.LightDataBuffer),
         nvrhi::BindingSetItem::TypedBuffer_UAV(1, resources.LightIndexMappingBuffer),
         nvrhi::BindingSetItem::Texture_UAV(2, resources.LocalLightPdfTexture),
+        nvrhi::BindingSetItem::StructuredBuffer_UAV(3, resources.PrimitiveInstanceToLightBuffer),
         nvrhi::BindingSetItem::StructuredBuffer_SRV(0, resources.TaskBuffer),
         nvrhi::BindingSetItem::StructuredBuffer_SRV(1, resources.PrimitiveLightBuffer),
         nvrhi::BindingSetItem::StructuredBuffer_SRV(2, m_Scene->GetInstanceBuffer()),
         nvrhi::BindingSetItem::StructuredBuffer_SRV(3, m_Scene->GetGeometryBuffer()),
         nvrhi::BindingSetItem::StructuredBuffer_SRV(4, m_Scene->GetMaterialBuffer()),
+        nvrhi::BindingSetItem::StructuredBuffer_SRV(5, resources.VirtualLightBuffer),
         nvrhi::BindingSetItem::Sampler(0, m_CommonPasses->m_AnisotropicWrapSampler)
     };
 
     m_BindingSet = m_Device->createBindingSet(bindingSetDesc, m_BindingLayout);
     m_TaskBuffer = resources.TaskBuffer;
     m_PrimitiveLightBuffer = resources.PrimitiveLightBuffer;
+    m_VirtualLightBuffer = resources.VirtualLightBuffer;
     m_LightIndexMappingBuffer = resources.LightIndexMappingBuffer;
     m_GeometryInstanceToLightBuffer = resources.GeometryInstanceToLightBuffer;
     m_LocalLightPdfTexture = resources.LocalLightPdfTexture;
@@ -340,10 +345,15 @@ static int isInfiniteLight(const donut::engine::Light& light)
 }
 
 RTXDI_LightBufferParameters PrepareLightsPass::Process(
-    nvrhi::ICommandList* commandList, 
+    nvrhi::ICommandList* commandList,
     const rtxdi::ReSTIRDIContext& context,
     const std::vector<std::shared_ptr<donut::engine::Light>>& sceneLights,
-    bool enableImportanceSampledEnvironmentLight)
+    bool enableImportanceSampledEnvironmentLight,
+    bool enableVirtualLights,
+    uint32_t virtualLightsSamplesPerFrame,
+    uint32_t virtualLightsSampleLifespan,
+    bool lockVirtualLights,
+    bool addVirtualLightsToGeometryMap)
 {
     RTXDI_LightBufferParameters outLightBufferParams = {};
     const rtxdi::ReSTIRDIStaticParameters& contextParameters = context.getStaticParameters();
@@ -353,6 +363,14 @@ RTXDI_LightBufferParameters PrepareLightsPass::Process(
     std::vector<PrepareLightsTask> tasks;
     std::vector<PolymorphicLightInfo> primitiveLightInfos;
     uint32_t lightBufferOffset = 0;
+    uint32_t taskBufferOffset = 0;
+
+    if (enableVirtualLights)
+    {
+        lightBufferOffset = virtualLightsSamplesPerFrame * virtualLightsSampleLifespan;
+        taskBufferOffset = virtualLightsSamplesPerFrame * (virtualLightsSampleLifespan - 1);
+    }
+    
     std::vector<uint32_t> geometryInstanceToLight(m_Scene->GetSceneGraph()->GetGeometryInstancesCount(), RTXDI_INVALID_LIGHT_INDEX);
 
     const auto& instances = m_Scene->GetSceneGraph()->GetMeshInstances();
@@ -477,9 +495,17 @@ RTXDI_LightBufferParameters PrepareLightsPass::Process(
     constants.numTasks = uint32_t(tasks.size());
     constants.currentFrameLightOffset = m_MaxLightsInBuffer * m_OddFrame;
     constants.previousFrameLightOffset = m_MaxLightsInBuffer * !m_OddFrame;
+    constants.virtualLightsEnabled = enableVirtualLights;
+    constants.virtualLightsCurrentFrameBlock = context.getFrameIndex() % virtualLightsSampleLifespan;
+    constants.virtualLightsPreviousFrameBlock = (context.getFrameIndex() - 1) % virtualLightsSampleLifespan;
+    constants.virtualLightsSamplesPerFrame = virtualLightsSamplesPerFrame;
+    constants.virtualLightsSampleLifespan = virtualLightsSampleLifespan;
+    constants.lockVirtualLights = lockVirtualLights;
+    constants.addVirtualLightsToGeometryMap = addVirtualLightsToGeometryMap;
+    constants.taskBufferOffset = taskBufferOffset;
     commandList->setPushConstants(&constants, sizeof(constants));
 
-    commandList->dispatch(dm::div_ceil(lightBufferOffset, 256));
+    commandList->dispatch(dm::div_ceil(lightBufferOffset - taskBufferOffset, 256));
 
     commandList->endMarker();
 

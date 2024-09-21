@@ -606,13 +606,35 @@ public:
         
         uint2 environmentMapSize = uint2(environmentMap->getDesc().width, environmentMap->getDesc().height);
 
+        bool enableGSGIPass = m_ui.indirectLightingMode == IndirectLightingMode::GSGI;
+        bool enablePMGIPass = m_ui.indirectLightingMode == IndirectLightingMode::PMGI;
+
+        GSGI_Parameters gsgiSettings = m_ui.lightingSettings.gsgiParams;
+        PMGI_Parameters pmgiSettings = m_ui.lightingSettings.pmgiParams;
+
+        uint32_t virtualLightSamplesPerFrame;
+        uint32_t virtualLightSampleLifespan;
+
+        if (enablePMGIPass)
+        {
+            virtualLightSamplesPerFrame = pmgiSettings.samplesPerFrame;
+            virtualLightSampleLifespan = pmgiSettings.sampleLifespan;
+        }
+        else
+        {
+            virtualLightSamplesPerFrame = gsgiSettings.samplesPerFrame;
+            virtualLightSampleLifespan = gsgiSettings.sampleLifespan;
+        }
+
         if (m_RtxdiResources && (
             environmentMapSize.x != m_RtxdiResources->EnvironmentPdfTexture->getDesc().width ||
             environmentMapSize.y != m_RtxdiResources->EnvironmentPdfTexture->getDesc().height ||
             numEmissiveMeshes > m_RtxdiResources->GetMaxEmissiveMeshes() ||
             numEmissiveTriangles > m_RtxdiResources->GetMaxEmissiveTriangles() || 
             numPrimitiveLights > m_RtxdiResources->GetMaxPrimitiveLights() ||
-            numGeometryInstances > m_RtxdiResources->GetMaxGeometryInstances()))
+            numGeometryInstances > m_RtxdiResources->GetMaxGeometryInstances() ||
+            virtualLightSamplesPerFrame != m_RtxdiResources->GetVirtualLightSamplesPerFrame() ||
+            virtualLightSampleLifespan != m_RtxdiResources->GetVirtualLightSampleLifespan()))
         {
             m_RtxdiResources = nullptr;
         }
@@ -663,6 +685,8 @@ public:
             uint32_t meshAllocationQuantum = 128;
             uint32_t triangleAllocationQuantum = 1024;
             uint32_t primitiveAllocationQuantum = 128;
+            rtxdi::ReGIRContext regirContext = m_isContext->getReGIRContext();
+            uint32_t reGIRCellCount = regirContext.getReGIRLightSlotCount() / regirContext.getReGIRStaticParameters().LightsPerCell;
 
             m_RtxdiResources = std::make_unique<RtxdiResources>(
                 GetDevice(), 
@@ -673,7 +697,10 @@ public:
                 (numPrimitiveLights + primitiveAllocationQuantum - 1) & ~(primitiveAllocationQuantum - 1),
                 numGeometryInstances,
                 environmentMapSize.x,
-                environmentMapSize.y);
+                environmentMapSize.y,
+                virtualLightSamplesPerFrame,
+                virtualLightSampleLifespan,
+                reGIRCellCount);
 
             m_PrepareLightsPass->CreateBindingSet(*m_RtxdiResources);
             
@@ -713,7 +740,7 @@ public:
         if (rtxdiResourcesCreated || m_ui.reloadShaders)
         {
             // Some RTXDI context settings affect the shader permutations
-            m_LightingPasses->CreatePipelines(m_ui.regirStaticParams, m_ui.useRayQuery);
+            m_LightingPasses->CreatePipelines(m_ui.regirStaticParams, m_ui.useRayQuery, m_ui.lightingSettings.reGIRType);
         }
 
         m_ui.reloadShaders = false;
@@ -1143,6 +1170,30 @@ public:
         restirDIContext.setFrameIndex(effectiveFrameIndex);
         m_isContext->getReSTIRGIContext().setFrameIndex(effectiveFrameIndex);
 
+        bool enableGSGIPass = m_ui.indirectLightingMode == IndirectLightingMode::GSGI;
+        bool enablePMGIPass = m_ui.indirectLightingMode == IndirectLightingMode::PMGI;
+        bool enableVirtualLights = enableGSGIPass || enablePMGIPass;
+
+        uint32_t virtualLightsSamplesPerFrame;
+        uint32_t virtualLightsSampleLifespan;
+        bool lockVirtualLights = m_ui.lightingSettings.vlightParams.lockLights;
+
+        if (enablePMGIPass)
+        {
+            virtualLightsSamplesPerFrame = m_ui.lightingSettings.pmgiParams.samplesPerFrame;
+            virtualLightsSampleLifespan = m_ui.lightingSettings.pmgiParams.sampleLifespan;
+        }
+        else
+        {
+            virtualLightsSamplesPerFrame = m_ui.lightingSettings.gsgiParams.samplesPerFrame;
+            virtualLightsSampleLifespan = m_ui.lightingSettings.gsgiParams.sampleLifespan;
+        }
+
+        if (enableVirtualLights)
+            m_ui.lightingSettings.vlightParams.totalVirtualLights = virtualLightsSamplesPerFrame * virtualLightsSampleLifespan;
+        else
+            m_ui.lightingSettings.vlightParams.totalVirtualLights = 0;
+
         {
             ProfilerScope scope(*m_Profiler, m_CommandList, ProfilerSection::MeshProcessing);
             
@@ -1150,7 +1201,12 @@ public:
                 m_CommandList,
                 restirDIContext,
                 m_Scene->GetSceneGraph()->GetLights(),
-                m_EnvironmentMapPdfMipmapPass != nullptr && m_ui.environmentMapImportanceSampling);
+                m_EnvironmentMapPdfMipmapPass != nullptr && m_ui.environmentMapImportanceSampling,
+                enableVirtualLights,
+                virtualLightsSamplesPerFrame,
+                virtualLightsSampleLifespan,
+                lockVirtualLights,
+                m_ui.lightingSettings.vlightParams.includeInBrdfLightSampling);
             m_isContext->setLightBufferParams(lightBufferParams);
 
             auto initialSamplingParams = restirDIContext.getInitialSamplingParameters();
@@ -1193,6 +1249,12 @@ public:
 #endif
         if (lightingSettings.denoiserMode == DENOISER_MODE_OFF)
             lightingSettings.enableGradients = false;
+
+        if (enablePMGIPass)
+            lightingSettings.vlightParams.clampingRatio = lightingSettings.pmgiParams.clampingDistance / lightingSettings.pmgiParams.lightSize;
+        else
+            lightingSettings.vlightParams.clampingRatio = lightingSettings.gsgiParams.clampingDistance / lightingSettings.gsgiParams.lightSize;
+        lightingSettings.pmgiParams.invTotalVirtualLights = 1 / static_cast<float>(lightingSettings.pmgiParams.samplesPerFrame * lightingSettings.pmgiParams.sampleLifespan);
 
         const bool checkerboard = restirDIContext.getStaticParameters().CheckerboardSamplingMode != rtxdi::CheckerboardMode::Off;
 
@@ -1241,7 +1303,25 @@ public:
             }
         }
 
-        if (enableBrdfAndIndirectPass)
+        if (enableGSGIPass)
+        {
+            m_LightingPasses->GenerateGSGILights(m_CommandList,
+                restirDIContext,
+                *m_isContext,
+                m_View,
+                lightingSettings);
+        }
+
+        else if (enablePMGIPass)
+        {
+            m_LightingPasses->GeneratePMGILights(m_CommandList,
+                restirDIContext,
+                *m_isContext,
+                m_View,
+                lightingSettings);
+        }
+
+        else if (enableBrdfAndIndirectPass)
         {
             ReSTIRDI_ShadingParameters restirDIShadingParams = m_isContext->getReSTIRDIContext().getShadingParameters();
             restirDIShadingParams.enableDenoiserInputPacking = true;
@@ -1473,6 +1553,10 @@ public:
                 break;
             case MotionVectors:
                 m_CommonPasses->BlitTexture(m_CommandList, framebuffer, m_RenderTargets->MotionVectors, &m_BindingCache);
+                break;
+            case DebugRenderOutput::LocalLightPdf:
+                m_CommonPasses->BlitTexture(m_CommandList, framebuffer, m_RtxdiResources->LocalLightPdfTexture, &m_BindingCache);
+                break;
         }
         
         m_Profiler->EndFrame(m_CommandList);
