@@ -92,20 +92,11 @@ void main(uint2 pixelPosition : SV_DispatchThreadID)
 [shader("raygeneration")]
 void RayGen()
 {
-    // Generate some rays
-    
     uint instanceMask = INSTANCE_MASK_OPAQUE;
     uint rayFlags = RAY_FLAG_SKIP_CLOSEST_HIT_SHADER | RAY_FLAG_FORCE_NON_OPAQUE;
     
     uint2 GlobalIndex = DispatchRaysIndex().xy;
     RandomSamplerState rng = initRandomSampler(GlobalIndex, g_Const.frameIndex);
-    
-    //float theta = 2 * c_pi * sampleUniformRng(rng);
-    //float phi = acos(1 - 2 * sampleUniformRng(rng));
-    //float dirX = sin(phi) * cos(theta);
-    //float dirY = sin(phi) * sin(theta);
-    //float dirZ = cos(phi);
-    //float3 direction = float3(dirX, dirY, dirZ);
     
     // Randomly offset ray origin to reduce noise from acute angles
     float3 origin = g_Const.view.cameraDirectionOrPosition.xyz;
