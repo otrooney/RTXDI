@@ -1160,7 +1160,7 @@ public:
             if (m_ui.rasterizeGBuffer)
                 m_RasterizedGBufferPass->Render(m_CommandList, m_View, m_ViewPrevious, *m_RenderTargets, m_ui.gbufferSettings);
             else
-                m_GBufferPass->Render(m_CommandList, m_View, m_ViewPrevious, m_ui.gbufferSettings);
+                m_GBufferPass->Render(m_CommandList, m_View, m_ViewPrevious, m_ui.gbufferSettings, effectiveFrameIndex, m_ui.rayTracedDoF, m_ui.dofFocusDistance, m_ui.dofCircleSize);
 
             m_PostprocessGBufferPass->Render(m_CommandList, m_View);
         }
@@ -1261,6 +1261,8 @@ public:
         bool enableDirectReStirPass = m_ui.directLightingMode == DirectLightingMode::ReStir;
         bool enableBrdfAndIndirectPass = m_ui.directLightingMode == DirectLightingMode::Brdf || m_ui.indirectLightingMode != IndirectLightingMode::None;
         bool enableIndirect = m_ui.indirectLightingMode != IndirectLightingMode::None;
+        
+        bool rayTracedDoFEnabled = (!m_ui.rasterizeGBuffer) && m_ui.rayTracedDoF;
 
         // When indirect lighting is enabled, we don't want ReSTIR to be the NRD front-end,
         // it should just write out the raw color data.
@@ -1283,7 +1285,8 @@ public:
                 *m_isContext,
                 m_View, m_ViewPrevious,
                 lightingSettings,
-                /* enableAccumulation = */ m_ui.aaMode == AntiAliasingMode::Accumulation);
+                /* enableAccumulation = */ m_ui.aaMode == AntiAliasingMode::Accumulation,
+                rayTracedDoFEnabled);
         }
 
         if (enableDirectReStirPass)
@@ -1340,7 +1343,8 @@ public:
                 /* enableAdditiveBlend = */ enableDirectReStirPass,
                 /* enableEmissiveSurfaces = */ m_ui.directLightingMode == DirectLightingMode::Brdf,
                 /* enableAccumulation = */ m_ui.aaMode == AntiAliasingMode::Accumulation,
-                enableReSTIRGI
+                enableReSTIRGI,
+                rayTracedDoFEnabled
                 );
         }
 

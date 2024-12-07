@@ -129,6 +129,11 @@ struct GBufferConstants
 
     float textureLodBias;
     float textureGradientScale; // 2^textureLodBias
+    
+    uint frameIndex;
+    uint enableRayTracedDoF;
+    float focalDistance;
+    float circleOfConfusion;
 };
 
 struct GlassConstants
@@ -265,6 +270,9 @@ struct ResamplingConstants
     DirReGIRSampling dirReGIRSampling;
     uint bypassDirectionalDirReGIRBuild;
     float dirReGIRBrdfUniformProbability;
+
+    uint rayTracedDoFEnabled;
+    uint3 pad3;
 };
 
 struct PerPassConstants

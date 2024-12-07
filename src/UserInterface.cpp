@@ -303,6 +303,12 @@ void UserInterface::GeneralRenderingSettings()
         }
 
         ImGui::Checkbox("Rasterize G-Buffer", (bool*)&m_ui.rasterizeGBuffer);
+        if (!m_ui.rasterizeGBuffer)
+        {
+            m_ui.resetAccumulation |= ImGui::Checkbox("Ray traced Depth of Field", (bool*)&m_ui.rayTracedDoF);
+            m_ui.resetAccumulation |= ImGui::SliderFloat("Focus distance", &m_ui.dofFocusDistance, 0.0f, 100.0f);
+            m_ui.resetAccumulation |= ImGui::SliderFloat("Circle of confusion", &m_ui.dofCircleSize, 0.0f, 0.05f);
+        }
 
         int resolutionScalePercents = int(m_ui.resolutionScale * 100.f);
         ImGui::SliderInt("Resolution Scale (%)", &resolutionScalePercents, 50, 100);

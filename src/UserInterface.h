@@ -122,6 +122,9 @@ struct UIData
     ibool enableToneMapping = true;
     ibool enablePixelJitter = true;
     ibool rasterizeGBuffer = true;
+    ibool rayTracedDoF = false;
+    float dofFocusDistance = 1.0f;
+    float dofCircleSize = 0.01f;
     ibool useRayQuery = false;
     ibool enableBloom = true;
     float exposureBias = -1.0f;

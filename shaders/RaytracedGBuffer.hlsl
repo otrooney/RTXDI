@@ -28,6 +28,7 @@ RWTexture2D<float4> u_Emissive : register(u5);
 RWTexture2D<float4> u_MotionVectors : register(u6);
 RWTexture2D<float> u_DeviceDepth : register(u7);
 RWBuffer<uint> u_RayCountBuffer : register(u8);
+RWTexture2D<float3> u_WorldPos : register(u9);
 
 RaytracingAccelerationStructure SceneBVH : register(t0);
 StructuredBuffer<InstanceData> t_InstanceData : register(t1);
@@ -98,6 +99,7 @@ void shadeSurface(
     u_GeoNormals[pixelPosition] = ndirToOctUnorm32(gs.flatNormal);
     u_Emissive[pixelPosition] = float4(ms.emissiveColor, maxGlassHitT);
     u_MotionVectors[pixelPosition] = float4(motion, 0);
+    u_WorldPos[pixelPosition] = mul(gs.instance.transform, float4(gs.objectSpacePosition, 1.0)).xyz;
     
     if (all(g_Const.materialReadbackPosition == int2(pixelPosition)))
     {
@@ -208,11 +210,26 @@ void RayGen()
 #if !USE_RAY_QUERY
     uint2 pixelPosition = DispatchRaysIndex().xy;
 #endif
-
+    
     if (any(float2(pixelPosition) >= g_Const.view.viewportSize))
         return;
 
     RayDesc ray = setupPrimaryRay(pixelPosition, g_Const.view);
+    
+    if (g_Const.enableRayTracedDoF)
+    {
+        RandomSamplerState rng = initRandomSampler(pixelPosition, g_Const.frameIndex);
+        
+        float3 focalPoint = ray.Origin + ray.Direction * g_Const.focalDistance;
+        float2 rand = { sampleUniformRng(rng), sampleUniformRng(rng) };
+    
+        float2 originOffset = sampleDisk(rand) * g_Const.circleOfConfusion;
+        float3 offsetVector1 = normalize(getPerpendicularVector(ray.Direction));
+        float3 offsetVector2 = normalize(cross(ray.Direction, offsetVector1));
+        ray.Origin = ray.Origin + (originOffset.x * offsetVector1) + (originOffset.y * offsetVector2);
+    
+        ray.Direction = normalize(focalPoint - ray.Origin);
+    }
     
     uint instanceMask = INSTANCE_MASK_OPAQUE;
     uint rayFlags = RAY_FLAG_NONE;
@@ -294,4 +311,5 @@ void RayGen()
     u_GeoNormals[pixelPosition] = 0;
     u_Emissive[pixelPosition] = float4(0, 0, 0, maxGlassHitT);
     u_MotionVectors[pixelPosition] = 0;
+    u_WorldPos[pixelPosition] = float3(0, 0, 0);
 }

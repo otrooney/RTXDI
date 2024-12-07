@@ -88,6 +88,12 @@ RenderTargets::RenderTargets(nvrhi::IDevice* device, int2 size)
     desc.debugName = "PrevGBufferGeoNormals";
     PrevGBufferGeoNormals = device->createTexture(desc);
 
+    desc.format = nvrhi::Format::RGBA32_FLOAT;
+    desc.debugName = "GBufferWorldPos";
+    GBufferWorldPos = device->createTexture(desc);
+    desc.debugName = "PrevGBufferWorldPos";
+    PrevGBufferWorldPos = device->createTexture(desc);
+
     desc.format = nvrhi::Format::RGBA8_UNORM;
     desc.debugName = "NormalRoughness";
     NormalRoughness = device->createTexture(desc);
@@ -117,6 +123,7 @@ RenderTargets::RenderTargets(nvrhi::IDevice* device, int2 size)
         GBufferNormals,
         GBufferGeoNormals,
         GBufferEmissive,
+        GBufferWorldPos,
         MotionVectors
     };
 
@@ -129,6 +136,7 @@ RenderTargets::RenderTargets(nvrhi::IDevice* device, int2 size)
         PrevGBufferNormals,
         PrevGBufferGeoNormals,
         GBufferEmissive,
+        PrevGBufferWorldPos,
         MotionVectors
     };
 
@@ -225,6 +233,7 @@ void RenderTargets::NextFrame()
     std::swap(GBufferNormals, PrevGBufferNormals);
     std::swap(GBufferGeoNormals, PrevGBufferGeoNormals);
     std::swap(GBufferFramebuffer, PrevGBufferFramebuffer);
+    std::swap(GBufferWorldPos, PrevGBufferWorldPos);
     std::swap(DiffuseConfidence, PrevDiffuseConfidence);
     std::swap(SpecularConfidence, PrevSpecularConfidence);
 }

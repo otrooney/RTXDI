@@ -31,10 +31,12 @@ public:
     nvrhi::TextureHandle GBufferNormals;
     nvrhi::TextureHandle GBufferGeoNormals;
     nvrhi::TextureHandle GBufferEmissive;
+    nvrhi::TextureHandle GBufferWorldPos;
     nvrhi::TextureHandle PrevGBufferDiffuseAlbedo;
     nvrhi::TextureHandle PrevGBufferSpecularRough;
     nvrhi::TextureHandle PrevGBufferNormals;
     nvrhi::TextureHandle PrevGBufferGeoNormals;
+    nvrhi::TextureHandle PrevGBufferWorldPos;
     nvrhi::TextureHandle MotionVectors;
     nvrhi::TextureHandle NormalRoughness; // for NRD
 

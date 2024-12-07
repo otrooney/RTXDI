@@ -178,7 +178,8 @@ public:
         const donut::engine::IView& view,
         const donut::engine::IView& previousView,
         const RenderSettings& localSettings,
-        bool enableAccumulation);
+        bool enableAccumulation,
+        const unsigned int rayTracedDoFEnabled);
 
     void GenerateGSGILights(
         nvrhi::ICommandList* commandList,
@@ -212,7 +213,8 @@ public:
         bool enableAdditiveBlend,
         bool enableEmissiveSurfaces,
         bool enableAccumulation,
-        bool enableReStirGI
+        bool enableReStirGI,
+        bool rayTracedDoFEnabled
     );
 
     void NextFrame();
@@ -228,7 +230,8 @@ private:
     void FillResamplingConstants(
         ResamplingConstants& constants,
         const RenderSettings& lightingSettings,
-        const rtxdi::ImportanceSamplingContext& isContext);
+        const rtxdi::ImportanceSamplingContext& isContext,
+        const unsigned int rayTracedDoFEnabled);
 
     void createPresamplingPipelines();
     void createReGIRPipeline(const rtxdi::ReGIRStaticParameters& regirStaticParams, const std::vector<donut::engine::ShaderMacro>& regirMacros, const ReGIRType reGIRType);

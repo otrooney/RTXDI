@@ -57,6 +57,7 @@ RaytracedGBufferPass::RaytracedGBufferPass(
         nvrhi::BindingLayoutItem::Texture_UAV(6),
         nvrhi::BindingLayoutItem::Texture_UAV(7),
         nvrhi::BindingLayoutItem::TypedBuffer_UAV(8),
+        nvrhi::BindingLayoutItem::Texture_UAV(9),
 
         nvrhi::BindingLayoutItem::VolatileConstantBuffer(0),
         nvrhi::BindingLayoutItem::PushConstants(1, sizeof(PerPassConstants)),
@@ -93,6 +94,7 @@ void RaytracedGBufferPass::CreateBindingSet(
             nvrhi::BindingSetItem::Texture_UAV(6, renderTargets.MotionVectors),
             nvrhi::BindingSetItem::Texture_UAV(7, renderTargets.DeviceDepthUAV),
             nvrhi::BindingSetItem::TypedBuffer_UAV(8, m_Profiler->GetRayCountBuffer()),
+            nvrhi::BindingSetItem::Texture_UAV(9, currentFrame ? renderTargets.GBufferWorldPos : renderTargets.PrevGBufferWorldPos),
 
             nvrhi::BindingSetItem::ConstantBuffer(0, m_ConstantBuffer),
             nvrhi::BindingSetItem::PushConstants(1, sizeof(PerPassConstants)),
@@ -116,7 +118,11 @@ void RaytracedGBufferPass::Render(
     nvrhi::ICommandList* commandList, 
     const donut::engine::IView& view,
     const donut::engine::IView& viewPrev,
-    const GBufferSettings& settings)
+    const GBufferSettings& settings,
+    const unsigned int frameIndex,
+    const unsigned int enableRayTracedDoF,
+    const float focalDistance,
+    const float circleOfConfusion)
 {
     commandList->beginMarker("GBufferFill");
 
@@ -132,6 +138,10 @@ void RaytracedGBufferPass::Render(
     constants.materialReadbackPosition = (settings.enableMaterialReadback) ? settings.materialReadbackPosition : int2(-1, -1);
     constants.textureLodBias = settings.textureLodBias;
     constants.textureGradientScale = powf(2.f, settings.textureLodBias);
+    constants.frameIndex = frameIndex;
+    constants.enableRayTracedDoF = enableRayTracedDoF;
+    constants.focalDistance = focalDistance;
+    constants.circleOfConfusion = circleOfConfusion;
     commandList->writeBuffer(m_ConstantBuffer, &constants, sizeof(constants));
 
     PerPassConstants pushConstants{};

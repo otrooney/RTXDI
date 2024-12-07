@@ -84,7 +84,11 @@ public:
         nvrhi::ICommandList* commandList,
         const donut::engine::IView& view,
         const donut::engine::IView& viewPrev,
-        const GBufferSettings& settings);
+        const GBufferSettings& settings,
+        const unsigned int frameIndex,
+        const unsigned int enableRayTracedDoF,
+        const float focalDistance,
+        const float circleOfConfusion);
 
     void NextFrame();
 };

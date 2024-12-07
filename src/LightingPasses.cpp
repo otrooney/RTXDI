@@ -143,6 +143,8 @@ LightingPasses::LightingPasses(
         nvrhi::BindingLayoutItem::Texture_SRV(10),
         nvrhi::BindingLayoutItem::Texture_SRV(11),
         nvrhi::BindingLayoutItem::Texture_SRV(12),
+        nvrhi::BindingLayoutItem::Texture_SRV(13),
+        nvrhi::BindingLayoutItem::Texture_SRV(14),
 
         nvrhi::BindingLayoutItem::RayTracingAccelStruct(30),
         nvrhi::BindingLayoutItem::RayTracingAccelStruct(31),
@@ -216,6 +218,8 @@ void LightingPasses::CreateBindingSet(
             nvrhi::BindingSetItem::Texture_SRV(10, currentFrame ? renderTargets.PrevRestirLuminance : renderTargets.RestirLuminance),
             nvrhi::BindingSetItem::Texture_SRV(11, renderTargets.MotionVectors),
             nvrhi::BindingSetItem::Texture_SRV(12, renderTargets.NormalRoughness),
+            nvrhi::BindingSetItem::Texture_SRV(13, currentFrame ? renderTargets.GBufferWorldPos : renderTargets.PrevGBufferWorldPos),
+            nvrhi::BindingSetItem::Texture_SRV(14, currentFrame ? renderTargets.PrevGBufferWorldPos : renderTargets.GBufferWorldPos),
             
             nvrhi::BindingSetItem::RayTracingAccelStruct(30, currentFrame ? topLevelAS : prevTopLevelAS),
             nvrhi::BindingSetItem::RayTracingAccelStruct(31, currentFrame ? prevTopLevelAS : topLevelAS),
@@ -502,7 +506,8 @@ void FillBRDFPTConstants(BRDFPathTracing_Parameters& constants, const GBufferSet
 void LightingPasses::FillResamplingConstants(
     ResamplingConstants& constants,
     const RenderSettings& lightingSettings,
-    const rtxdi::ImportanceSamplingContext& isContext)
+    const rtxdi::ImportanceSamplingContext& isContext,
+    const unsigned int rayTracedDoFEnabled)
 {
     const RTXDI_LightBufferParameters& lightBufferParameters = isContext.getLightBufferParameters();
 
@@ -541,6 +546,7 @@ void LightingPasses::FillResamplingConstants(
     constants.dirReGIRSampling = lightingSettings.dirReGIRSampling;
     constants.dirReGIRBrdfUniformProbability = lightingSettings.dirReGIRBrdfUniformProbability;
     constants.bypassDirectionalDirReGIRBuild = lightingSettings.bypassDirectionalDirReGIRBuild;
+    constants.rayTracedDoFEnabled = rayTracedDoFEnabled;
 
     m_CurrentFrameOutputReservoir = isContext.getReSTIRDIContext().getBufferIndices().shadingInputBufferIndex;
 }
@@ -551,7 +557,8 @@ void LightingPasses::PrepareForLightSampling(
     const donut::engine::IView& view,
     const donut::engine::IView& previousView,
     const RenderSettings& localSettings,
-    bool enableAccumulation)
+    bool enableAccumulation,
+    const unsigned int rayTracedDoFEnabled)
 {
     rtxdi::ReSTIRDIContext& restirDIContext = isContext.getReSTIRDIContext();
     rtxdi::ReGIRContext& regirContext = isContext.getReGIRContext();
@@ -560,7 +567,7 @@ void LightingPasses::PrepareForLightSampling(
     constants.frameIndex = restirDIContext.getFrameIndex();
     view.FillPlanarViewConstants(constants.view);
     previousView.FillPlanarViewConstants(constants.prevView);
-    FillResamplingConstants(constants, localSettings, isContext);
+    FillResamplingConstants(constants, localSettings, isContext, rayTracedDoFEnabled);
     constants.enableAccumulation = enableAccumulation;
 
     commandList->writeBuffer(m_ConstantBuffer, &constants, sizeof(constants));
@@ -738,7 +745,8 @@ void LightingPasses::RenderBrdfRays(
     bool enableAdditiveBlend,
     bool enableEmissiveSurfaces,
     bool enableAccumulation,
-    bool enableReSTIRGI
+    bool enableReSTIRGI,
+    bool rayTracedDoFEnabled
     )
 {
     ResamplingConstants constants = {};
@@ -757,7 +765,7 @@ void LightingPasses::RenderBrdfRays(
     constants.sceneConstants.environmentMapTextureIndex = (environmentLight.textureIndex >= 0) ? environmentLight.textureIndex : 0;
     constants.sceneConstants.environmentScale = environmentLight.radianceScale.x;
     constants.sceneConstants.environmentRotation = environmentLight.rotation;
-    FillResamplingConstants(constants, localSettings, isContext);
+    FillResamplingConstants(constants, localSettings, isContext, rayTracedDoFEnabled);
     FillBRDFPTConstants(constants.brdfPT, gbufferSettings, localSettings, isContext.getLightBufferParameters());
     constants.brdfPT.enableIndirectEmissiveSurfaces = enableEmissiveSurfaces;
     constants.brdfPT.enableReSTIRGI = enableReSTIRGI;

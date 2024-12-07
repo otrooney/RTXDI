@@ -50,6 +50,8 @@ Texture2D<uint> t_PrevGBufferSpecularRough : register(t9);
 Texture2D<float2> t_PrevRestirLuminance : register(t10);
 Texture2D<float4> t_MotionVectors : register(t11);
 Texture2D<float4> t_DenoiserNormalRoughness : register(t12);
+Texture2D<float3> t_GBufferWorldPos : register(t13);
+Texture2D<float3> t_PrevGBufferWorldPos : register(t14);
 
 // Scene resources
 RaytracingAccelerationStructure SceneBVH : register(t30);
@@ -411,7 +413,8 @@ RAB_Surface GetGBufferSurface(
     Texture2D<uint> normalsTexture, 
     Texture2D<uint> geoNormalsTexture, 
     Texture2D<uint> diffuseAlbedoTexture, 
-    Texture2D<uint> specularRoughTexture)
+    Texture2D<uint> specularRoughTexture,
+    Texture2D<float3> worldPosTexture)
 {
     RAB_Surface surface = RAB_EmptySurface();
 
@@ -429,7 +432,12 @@ RAB_Surface GetGBufferSurface(
     float4 specularRough = Unpack_R8G8B8A8_Gamma_UFLOAT(specularRoughTexture[pixelPosition]);
     surface.specularF0 = specularRough.rgb;
     surface.roughness = specularRough.a;
-    surface.worldPos = viewDepthToWorldPos(view, pixelPosition, surface.viewDepth);
+    
+    if (g_Const.rayTracedDoFEnabled)
+        surface.worldPos = worldPosTexture[pixelPosition];
+    else
+        surface.worldPos = viewDepthToWorldPos(view, pixelPosition, surface.viewDepth);
+    
     surface.viewDir = normalize(view.cameraDirectionOrPosition.xyz - surface.worldPos);
     surface.diffuseProbability = getSurfaceDiffuseProbability(surface);
 
@@ -451,7 +459,8 @@ RAB_Surface RAB_GetGBufferSurface(int2 pixelPosition, bool previousFrame)
             t_PrevGBufferNormals, 
             t_PrevGBufferGeoNormals, 
             t_PrevGBufferDiffuseAlbedo, 
-            t_PrevGBufferSpecularRough);
+            t_PrevGBufferSpecularRough,
+            t_PrevGBufferWorldPos);
     }
     else
     {
@@ -462,7 +471,8 @@ RAB_Surface RAB_GetGBufferSurface(int2 pixelPosition, bool previousFrame)
             t_GBufferNormals, 
             t_GBufferGeoNormals, 
             t_GBufferDiffuseAlbedo, 
-            t_GBufferSpecularRough);
+            t_GBufferSpecularRough,
+            t_GBufferWorldPos);
     }
 }
 
