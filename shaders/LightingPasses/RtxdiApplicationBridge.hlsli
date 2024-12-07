@@ -50,8 +50,8 @@ Texture2D<uint> t_PrevGBufferSpecularRough : register(t9);
 Texture2D<float2> t_PrevRestirLuminance : register(t10);
 Texture2D<float4> t_MotionVectors : register(t11);
 Texture2D<float4> t_DenoiserNormalRoughness : register(t12);
-Texture2D<float3> t_GBufferWorldPos : register(t13);
-Texture2D<float3> t_PrevGBufferWorldPos : register(t14);
+Texture2D<float4> t_GBufferWorldPos : register(t13);
+Texture2D<float4> t_PrevGBufferWorldPos : register(t14);
 
 // Scene resources
 RaytracingAccelerationStructure SceneBVH : register(t30);
@@ -414,7 +414,7 @@ RAB_Surface GetGBufferSurface(
     Texture2D<uint> geoNormalsTexture, 
     Texture2D<uint> diffuseAlbedoTexture, 
     Texture2D<uint> specularRoughTexture,
-    Texture2D<float3> worldPosTexture)
+    Texture2D<float4> worldPosTexture)
 {
     RAB_Surface surface = RAB_EmptySurface();
 
@@ -434,7 +434,7 @@ RAB_Surface GetGBufferSurface(
     surface.roughness = specularRough.a;
     
     if (g_Const.rayTracedDoFEnabled)
-        surface.worldPos = worldPosTexture[pixelPosition];
+        surface.worldPos = worldPosTexture[pixelPosition].xyz;
     else
         surface.worldPos = viewDepthToWorldPos(view, pixelPosition, surface.viewDepth);
     

@@ -28,7 +28,7 @@ RWTexture2D<float4> u_Emissive : register(u5);
 RWTexture2D<float4> u_MotionVectors : register(u6);
 RWTexture2D<float> u_DeviceDepth : register(u7);
 RWBuffer<uint> u_RayCountBuffer : register(u8);
-RWTexture2D<float3> u_WorldPos : register(u9);
+RWTexture2D<float4> u_WorldPos : register(u9);
 
 RaytracingAccelerationStructure SceneBVH : register(t0);
 StructuredBuffer<InstanceData> t_InstanceData : register(t1);
@@ -43,7 +43,8 @@ void shadeSurface(
     uint instanceIndex,
     uint geometryIndex,
     uint primitiveIndex, 
-    float2 rayBarycentrics, 
+    float2 rayBarycentrics,
+    float committedRayT,
     float3 viewDirection, 
     float maxGlassHitT)
 {
@@ -99,7 +100,11 @@ void shadeSurface(
     u_GeoNormals[pixelPosition] = ndirToOctUnorm32(gs.flatNormal);
     u_Emissive[pixelPosition] = float4(ms.emissiveColor, maxGlassHitT);
     u_MotionVectors[pixelPosition] = float4(motion, 0);
-    u_WorldPos[pixelPosition] = mul(gs.instance.transform, float4(gs.objectSpacePosition, 1.0)).xyz;
+    
+    float4 worldPosDefocus;
+    worldPosDefocus.xyz = mul(gs.instance.transform, float4(gs.objectSpacePosition, 1.0)).xyz;
+    worldPosDefocus.a = (committedRayT - g_Const.focalDistance) * g_Const.circleOfConfusion;
+    u_WorldPos[pixelPosition] = worldPosDefocus;
     
     if (all(g_Const.materialReadbackPosition == int2(pixelPosition)))
     {
@@ -297,6 +302,7 @@ void RayGen()
             payload.geometryIndex,
             payload.primitiveIndex,
             payload.barycentrics,
+            payload.committedRayT,
             ray.Direction,
             maxGlassHitT);
 
@@ -311,5 +317,5 @@ void RayGen()
     u_GeoNormals[pixelPosition] = 0;
     u_Emissive[pixelPosition] = float4(0, 0, 0, maxGlassHitT);
     u_MotionVectors[pixelPosition] = 0;
-    u_WorldPos[pixelPosition] = float3(0, 0, 0);
+    u_WorldPos[pixelPosition] = float4(0, 0, 0, 0);
 }
